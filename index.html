@@ -19,93 +19,22 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    body{
-      margin:0;
-      font-family:Arial, sans-serif;
-      background:#f4f6f9;
-    }
-    .container{
-      padding:15px;
-      max-width:700px;
-      margin:auto;
-    }
-    .card{
-      background:white;
-      padding:15px;
-      border-radius:12px;
-      margin-bottom:15px;
-      box-shadow:0 4px 12px rgba(0,0,0,0.08);
-    }
-    h2{
-      margin:0 0 10px 0;
-      color:#0077cc;
-    }
-    input, textarea, select{
-      width:100%;
-      padding:12px;
-      margin:6px 0 12px 0;
-      border-radius:10px;
-      border:1px solid #ccc;
-      font-size:16px;
-      box-sizing:border-box;
-    }
-    button{
-      width:100%;
-      padding:15px;
-      border:none;
-      border-radius:10px;
-      background:#0077cc;
-      color:white;
-      font-size:16px;
-      font-weight:bold;
-      cursor:pointer;
-    }
-    button.secondary{
-      background:#4a5568;
-    }
-    .row{
-      display:flex;
-      gap:10px;
-    }
-    .row > *{
-      flex:1;
-    }
-    table{
-      width:100%;
-      border-collapse:collapse;
-      font-size:14px;
-    }
-    th, td{
-      border:1px solid #ddd;
-      padding:8px;
-      text-align:center;
-    }
-    td.desc{
-      text-align:left;
-    }
-    .btn-remove{
-      background:#e11d48;
-      color:#fff;
-      border:none;
-      padding:8px 10px;
-      border-radius:8px;
-      cursor:pointer;
-      font-weight:700;
-    }
-    .total{
-      text-align:right;
-      font-weight:bold;
-      font-size:18px;
-      margin-top:10px;
-    }
-    /* área de compartilhar */
-    .share-area{
-      display:none;
-      margin-top:10px;
-    }
-    .share-area button{
-      margin-top:10px;
-    }
+    body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
+    .container{ padding:15px; max-width:700px; margin:auto; }
+    .card{ background:white; padding:15px; border-radius:12px; margin-bottom:15px; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+    h2{ margin:0 0 10px 0; color:#0077cc; }
+    input, textarea, select{ width:100%; padding:12px; margin:6px 0 12px 0; border-radius:10px; border:1px solid #ccc; font-size:16px; box-sizing:border-box; }
+    button{ width:100%; padding:15px; border:none; border-radius:10px; background:#0077cc; color:white; font-size:16px; font-weight:bold; cursor:pointer; }
+    button.secondary{ background:#4a5568; }
+    .row{ display:flex; gap:10px; }
+    .row > *{ flex:1; }
+    table{ width:100%; border-collapse:collapse; font-size:14px; }
+    th, td{ border:1px solid #ddd; padding:8px; text-align:center; }
+    td.desc{ text-align:left; }
+    .btn-remove{ background:#e11d48; color:#fff; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; font-weight:700; }
+    .total{ text-align:right; font-weight:bold; font-size:18px; margin-top:10px; }
+    .share-area{ display:none; margin-top:10px; }
+    .share-area button{ margin-top:10px; }
   </style>
 </head>
 
@@ -187,7 +116,6 @@
     let lastPdfBlob = null;
     let lastPdfFilename = "Orcamento.pdf";
 
-    // util: recalcula total somando coluna "Líquido"
     function recalcularTotal(){
       totalGeral = 0;
       document.querySelectorAll("#tabela tbody tr").forEach(tr => {
@@ -196,7 +124,6 @@
       document.getElementById("total").innerText = totalGeral.toFixed(2);
     }
 
-    // util: converte imagem (logo.png) para DataURL (base64)
     function loadImageAsDataURL(src){
       return new Promise((resolve, reject) => {
         const img = new Image();
@@ -207,18 +134,14 @@
           canvas.height = img.height;
           const ctx = canvas.getContext("2d");
           ctx.drawImage(img, 0, 0);
-          try{
-            resolve(canvas.toDataURL("image/png"));
-          }catch(err){
-            reject(err);
-          }
+          try{ resolve(canvas.toDataURL("image/png")); }
+          catch(err){ reject(err); }
         };
         img.onerror = reject;
         img.src = src;
       });
     }
 
-    // adicionar serviço
     document.getElementById("btnAddServico").addEventListener("click", function(){
       const desc = document.getElementById("descricao").value.trim();
       const qtd = parseFloat(document.getElementById("quantidade").value);
@@ -246,10 +169,7 @@
       btn.className = "btn-remove";
       btn.type = "button";
       btn.innerText = "Remover";
-      btn.addEventListener("click", () => {
-        row.remove();
-        recalcularTotal();
-      });
+      btn.addEventListener("click", () => { row.remove(); recalcularTotal(); });
       actionCell.appendChild(btn);
 
       recalcularTotal();
@@ -260,38 +180,28 @@
       document.getElementById("descontoServico").value = 0;
     });
 
-    // compartilhar arquivo (se suportado)
     document.getElementById("btnShare").addEventListener("click", async function(){
       if(!lastPdfBlob){
         alert("Gere o PDF antes de compartilhar.");
         return;
       }
-
       const file = new File([lastPdfBlob], lastPdfFilename, { type: "application/pdf" });
 
       if(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })){
         try{
-          await navigator.share({
-            title: "Orçamento RE Climatização",
-            text: "Segue o orçamento em PDF.",
-            files: [file]
-          });
-        }catch(e){
-          // usuário cancelou ou falhou
-        }
+          await navigator.share({ title: "Orçamento RE Climatização", text: "Segue o orçamento em PDF.", files: [file] });
+        }catch(e){}
       }else{
         alert("Seu navegador não suporta compartilhar arquivo direto. Use o botão 'Abrir WhatsApp (mensagem)' e anexe o PDF manualmente.");
       }
     });
 
-    // fallback WhatsApp (corrigido)
     document.getElementById("btnWhatsAppFallback").addEventListener("click", function(){
       const cliente = document.getElementById("cliente").value || "Cliente";
       const msg = encodeURIComponent(`Olá, ${cliente}! Segue o orçamento em PDF. (Anexo)`);
       window.open(`https://wa.me/?text=${msg}`, "_blank");
     });
 
-    // gerar PDF
     document.getElementById("btnGerarPDF").addEventListener("click", async function() {
       if(totalGeral === 0){
         alert("Adicione pelo menos um serviço.");
@@ -312,44 +222,35 @@
       const obs = document.getElementById("observacoes").value;
       const data = new Date().toLocaleDateString();
 
-      // cores sutis
       const lineBlue = [210, 225, 245];
-      const boxBlue = [248, 252, 255];
+      const boxBlue  = [248, 252, 255];
 
-      // carrega logo do GitHub (logo.png na mesma pasta)
       let logoDataUrl = null;
-      try{
-        logoDataUrl = await loadImageAsDataURL("logo.png");
-      }catch(e){
-        logoDataUrl = null;
-      }
+      try{ logoDataUrl = await loadImageAsDataURL("logo.png"); }catch(e){ logoDataUrl = null; }
 
-      // ===== CABEÇALHO (ARRUMADO) =====
-      const headerTop = 10;
-
-      // Logo (grande, mas sem invadir o resto)
+      // ===== CABEÇALHO =====
       if(logoDataUrl){
-        doc.addImage(logoDataUrl, "PNG", margin, headerTop, 75, 30);
+        // logo maior (como estava no seu código)
+        doc.addImage(logoDataUrl, "PNG", 15, 8, 100, 40);
       }
 
-      // Títulos centralizados (não somem mais)
-      doc.setTextColor(0,0,0);
-
-      doc.setFont("helvetica","bold");
-      doc.setFontSize(20);
-      doc.text("RE Climatização", centerX, 22, { align: "center" });
-
-      doc.setFont("helvetica","normal");
-      doc.setFontSize(12);
-      doc.text("Proposta Comercial", centerX, 30, { align: "center" });
-
-      // Linha horizontal sempre alinhada (margens iguais)
+      // Linha horizontal alinhada certinha (margens iguais)
       doc.setDrawColor(...lineBlue);
       doc.setLineWidth(1);
-      doc.line(margin, 42, pageW - margin, 42);
 
-      // ===== QUADRO CLIENTE (COMEÇA ABAIXO DO CABEÇALHO) =====
-      let y = 55;
+      // "Proposta Comercial" mais embaixo, quase encostando na linha
+      const lineY = 52;
+      const propostaY = 49; // quase rente à linha
+
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(13);
+      doc.setTextColor(0,0,0);
+      doc.text("Proposta Comercial", centerX, propostaY, { align: "center" });
+
+      doc.line(margin, lineY, pageW - margin, lineY);
+
+      // ===== QUADRO CLIENTE (desce para não sobrepor) =====
+      let y = 65;
 
       doc.setFillColor(...boxBlue);
       doc.roundedRect(12, y-7, pageW - 24, 22, 3, 3, "F");
@@ -371,11 +272,8 @@
 
       y += 12;
 
-      // tabela
       const body = Array.from(document.querySelectorAll("#tabela tbody tr")).map(tr =>
-        Array.from(tr.querySelectorAll("td"))
-          .slice(0,6) // ignora coluna "Ação"
-          .map(td => td.innerText)
+        Array.from(tr.querySelectorAll("td")).slice(0,6).map(td => td.innerText)
       );
 
       doc.autoTable({
@@ -388,12 +286,7 @@
           if (data.section === 'head' || data.section === 'body') {
             doc.setDrawColor(210,210,210);
             doc.setLineWidth(0.5);
-            doc.line(
-              data.cell.x,
-              data.cell.y + data.cell.height,
-              data.cell.x + data.cell.width,
-              data.cell.y + data.cell.height
-            );
+            doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
           }
         },
         columnStyles: {
@@ -407,14 +300,12 @@
 
       y = doc.lastAutoTable.finalY + 10;
 
-      // Total geral
       doc.setFont("helvetica","bold");
       doc.setFontSize(14);
       doc.setTextColor(0,0,0);
       doc.text("Total Geral: R$ " + totalGeral.toFixed(2), pageW - margin, y, { align: 'right' });
       y += 10;
 
-      // Forma de pagamento
       doc.setFont("helvetica","bold");
       doc.setFontSize(11);
       doc.setTextColor(0,0,0);
@@ -431,7 +322,6 @@
       doc.text(pagamento || "-", valueX, y);
       y += 12;
 
-      // Observações
       if(obs){
         doc.setFont("helvetica","bold");
         doc.setTextColor(0,0,0);
@@ -447,14 +337,12 @@
         y += 6;
       }
 
-      // Data no final
       doc.setFont("helvetica","normal");
       doc.setFontSize(10);
       doc.setTextColor(90,90,90);
       doc.text("Data: " + data, margin, y);
       y += 18;
 
-      // assinatura
       doc.setDrawColor(160,160,160);
       doc.setLineWidth(0.6);
       doc.line(55, y, 155, y);
@@ -463,18 +351,14 @@
       doc.setTextColor(90,90,90);
       doc.text("Assinatura do cliente", 105, y, { align: "center" });
 
-      // salvar e preparar compartilhar
       lastPdfFilename = "Orcamento_" + ((cliente || "Cliente").replace(/[\\/:*?"<>|]/g, "")) + ".pdf";
       lastPdfBlob = doc.output("blob");
 
-      // baixa o pdf normalmente
       doc.save(lastPdfFilename);
-
-      // mostra botões de compartilhar
       document.getElementById("shareArea").style.display = "block";
     });
 
-    // ✅ PWA: registrar Service Worker (NO FINAL DO SCRIPT)
+    // ✅ PWA: registrar Service Worker
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").catch(() => {});
