@@ -16,7 +16,7 @@ body{
 }
 .container{
   padding:15px;
-  max-width:600px;
+  max-width:700px;
   margin:auto;
 }
 .card{
@@ -37,6 +37,7 @@ input, textarea, select{
   border-radius:10px;
   border:1px solid #ccc;
   font-size:16px;
+  box-sizing:border-box;
 }
 button{
   width:100%;
@@ -49,11 +50,15 @@ button{
   font-weight:bold;
   cursor:pointer;
 }
-.total{
-  text-align:right;
-  font-weight:bold;
-  font-size:18px;
+button.secondary{
+  background:#4a5568;
 }
+.row{
+  display:flex;
+  gap:10px;
+}
+.row > *{ flex:1; }
+
 table{
   width:100%;
   border-collapse:collapse;
@@ -61,8 +66,35 @@ table{
 }
 th, td{
   border:1px solid #ddd;
-  padding:6px;
+  padding:8px;
   text-align:center;
+}
+td.desc{
+  text-align:left;
+}
+.btn-remove{
+  background:#e11d48;
+  color:#fff;
+  border:none;
+  padding:8px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:700;
+}
+.total{
+  text-align:right;
+  font-weight:bold;
+  font-size:18px;
+  margin-top:10px;
+}
+
+/* área de compartilhar */
+.share-area{
+  display:none;
+  margin-top:10px;
+}
+.share-area button{
+  margin-top:10px;
 }
 </style>
 </head>
@@ -76,20 +108,25 @@ th, td{
     <label>Cliente</label>
     <input type="text" id="cliente">
 
-    <label>Telefone</label>
-    <input type="text" id="telefoneCliente">
+    <div class="row">
+      <div>
+        <label>Telefone</label>
+        <input type="text" id="telefoneCliente">
+      </div>
+      <div>
+        <label>Forma de Pagamento</label>
+        <select id="pagamento">
+          <option>Dinheiro</option>
+          <option>PIX</option>
+          <option>Cartão</option>
+          <option>Transferência</option>
+          <option>Parcelado</option>
+        </select>
+      </div>
+    </div>
 
     <label>Endereço</label>
     <input type="text" id="enderecoCliente">
-
-    <label>Forma de Pagamento</label>
-    <select id="pagamento">
-      <option>Dinheiro</option>
-      <option>PIX</option>
-      <option>Cartão</option>
-      <option>Transferência</option>
-      <option>Parcelado</option>
-    </select>
 
     <label>Observações</label>
     <textarea id="observacoes"></textarea>
@@ -99,9 +136,12 @@ th, td{
     <h2>Serviços</h2>
 
     <input type="text" id="descricao" placeholder="Descrição">
-    <input type="number" id="quantidade" placeholder="Qtd">
-    <input type="number" id="valorUnitario" placeholder="Valor Unitário">
-    <input type="number" id="descontoServico" placeholder="Desconto R$" value="0">
+
+    <div class="row">
+      <input type="number" id="quantidade" placeholder="Qtd">
+      <input type="number" id="valorUnitario" placeholder="Valor Unitário">
+      <input type="number" id="descontoServico" placeholder="Desconto R$" value="0">
+    </div>
 
     <button type="button" id="btnAddServico">Adicionar Serviço</button>
 
@@ -114,23 +154,65 @@ th, td{
           <th>Total</th>
           <th>Desc</th>
           <th>Líquido</th>
+          <th>Ação</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
 
     <p class="total">Total: R$ <span id="total">0.00</span></p>
+
+    <div class="share-area" id="shareArea">
+      <button type="button" class="secondary" id="btnShare">Compartilhar (WhatsApp)</button>
+      <button type="button" class="secondary" id="btnWhatsAppFallback">Abrir WhatsApp (mensagem)</button>
+    </div>
   </div>
 
   <button type="button" id="btnGerarPDF">GERAR ORÇAMENTO</button>
+
 </div>
 
 <script>
 let totalGeral = 0;
 
-// Adicionar serviço
+// guarda o último PDF gerado para compartilhar
+let lastPdfBlob = null;
+let lastPdfFilename = "Orcamento.pdf";
+
+// util: recalcula total somando coluna "Líquido"
+function recalcularTotal(){
+  totalGeral = 0;
+  document.querySelectorAll("#tabela tbody tr").forEach(tr => {
+    totalGeral += parseFloat(tr.cells[5].innerText) || 0;
+  });
+  document.getElementById("total").innerText = totalGeral.toFixed(2);
+}
+
+// util: converte imagem (logo.png) para DataURL (base64)
+function loadImageAsDataURL(src){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = function(){
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      try{
+        resolve(canvas.toDataURL("image/png"));
+      }catch(err){
+        reject(err);
+      }
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// adicionar serviço
 document.getElementById("btnAddServico").addEventListener("click", function(){
-  const desc = document.getElementById("descricao").value;
+  const desc = document.getElementById("descricao").value.trim();
   const qtd = parseFloat(document.getElementById("quantidade").value);
   const unit = parseFloat(document.getElementById("valorUnitario").value);
   const desconto = parseFloat(document.getElementById("descontoServico").value) || 0;
@@ -142,19 +224,27 @@ document.getElementById("btnAddServico").addEventListener("click", function(){
 
   const tbody = document.querySelector("#tabela tbody");
   const row = tbody.insertRow();
+
   row.insertCell(0).innerText = desc;
+  row.cells[0].className = "desc";
   row.insertCell(1).innerText = qtd;
   row.insertCell(2).innerText = unit.toFixed(2);
   row.insertCell(3).innerText = total.toFixed(2);
   row.insertCell(4).innerText = desconto.toFixed(2);
   row.insertCell(5).innerText = liquido.toFixed(2);
 
-  totalGeral = 0;
-  document.querySelectorAll("#tabela tbody tr").forEach(tr => {
-    totalGeral += parseFloat(tr.cells[5].innerText);
+  const actionCell = row.insertCell(6);
+  const btn = document.createElement("button");
+  btn.className = "btn-remove";
+  btn.type = "button";
+  btn.innerText = "Remover";
+  btn.addEventListener("click", () => {
+    row.remove();
+    recalcularTotal();
   });
+  actionCell.appendChild(btn);
 
-  document.getElementById("total").innerText = totalGeral.toFixed(2);
+  recalcularTotal();
 
   document.getElementById("descricao").value = "";
   document.getElementById("quantidade").value = "";
@@ -162,9 +252,39 @@ document.getElementById("btnAddServico").addEventListener("click", function(){
   document.getElementById("descontoServico").value = 0;
 });
 
-// Gerar PDF
-document.getElementById("btnGerarPDF").addEventListener("click", function() {
+// compartilhar
+document.getElementById("btnShare").addEventListener("click", async function(){
+  if(!lastPdfBlob){
+    alert("Gere o PDF antes de compartilhar.");
+    return;
+  }
 
+  const file = new File([lastPdfBlob], lastPdfFilename, { type: "application/pdf" });
+
+  if(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })){
+    try{
+      await navigator.share({
+        title: "Orçamento RE Climatização",
+        text: "Segue o orçamento em PDF.",
+        files: [file]
+      });
+    }catch(e){
+      // usuário cancelou ou falhou
+    }
+  }else{
+    alert("Seu navegador não suporta compartilhar arquivo direto. Use o botão 'Abrir WhatsApp (mensagem)' e anexe o PDF manualmente.");
+  }
+});
+
+document.getElementById("btnWhatsAppFallback").addEventListener("click", function(){
+  const cliente = document.getElementById("cliente").value || "Cliente";
+  const msg = encodeURIComponent(`Olá, ${cliente}! Segue o orçamento em PDF. (Anexo)`);
+  // abre WhatsApp com mensagem pronta (anexo é manual)
+  window.open(`https://wa.me/?text=${msg}`, "_blank");
+});
+
+// gerar PDF
+document.getElementById("btnGerarPDF").addEventListener("click", async function() {
   if(totalGeral === 0){
     alert("Adicione pelo menos um serviço.");
     return;
@@ -180,34 +300,58 @@ document.getElementById("btnGerarPDF").addEventListener("click", function() {
   const obs = document.getElementById("observacoes").value;
   const data = new Date().toLocaleDateString();
 
-  // LOGO vindo do GitHub
-  doc.addImage("logo.png", "PNG", 15, 8, 60, 35);
+  // cores sutis
+  const lineBlue = [210, 225, 245];
+  const boxBlue  = [248, 252, 255];
+
+  // carrega logo do GitHub (logo.png na mesma pasta)
+  let logoDataUrl = null;
+  try{
+    logoDataUrl = await loadImageAsDataURL("logo.png");
+  }catch(e){
+    // se falhar, segue sem logo
+    logoDataUrl = null;
+  }
+
+  // Cabeçalho
+  if(logoDataUrl){
+    doc.addImage(logoDataUrl, "PNG", 15, 8, 62, 34);
+  }
 
   doc.setFont("helvetica","bold");
   doc.setFontSize(26);
+  doc.setTextColor(0,0,0);
   doc.text("RE Climatização", 80, 22);
 
-  doc.setDrawColor(210,225,245);
+  // linha horizontal do cabeçalho
+  doc.setDrawColor(...lineBlue);
   doc.setLineWidth(1);
   doc.line(15, 40, 195, 40);
 
-  let y = 55;
+  // quadro cliente (azul bem suave)
+  let y = 52;
+  doc.setFillColor(...boxBlue);
+  doc.roundedRect(12, y-7, 180, 22, 3, 3, "F");
 
   doc.setFont("helvetica","bold");
   doc.setFontSize(11);
+  doc.setTextColor(0,0,0);
   doc.text("Cliente:", 15, y);
   doc.setFont("helvetica","normal");
-  doc.text(cliente, 40, y);
+  doc.text(cliente || "-", 40, y);
 
   y += 7;
-  doc.text("Telefone: " + telefone, 15, y);
+  doc.setTextColor(90,90,90);
+  doc.text("Telefone: " + (telefone || "-"), 15, y);
+
   y += 7;
-  doc.text("Endereço: " + endereco, 15, y);
+  doc.text("Endereço: " + (endereco || "-"), 15, y);
 
   y += 12;
 
+  // tabela (visual limpo com linhas horizontais)
   const body = Array.from(document.querySelectorAll("#tabela tbody tr")).map(tr =>
-    Array.from(tr.querySelectorAll("td")).map(td => td.innerText)
+    Array.from(tr.querySelectorAll("td")).slice(0,6).map(td => td.innerText) // ignora coluna "Ação"
   );
 
   doc.autoTable({
@@ -215,48 +359,97 @@ document.getElementById("btnGerarPDF").addEventListener("click", function() {
     head: [['Descrição','Qtd','Unit','Total','Desc','Líquido']],
     body,
     theme: 'plain',
-    styles: { fontSize: 10, cellPadding: 3 }
+    styles: { fontSize: 10, cellPadding: 3 },
+    didDrawCell: function(data) {
+      if (data.section === 'head' || data.section === 'body') {
+        doc.setDrawColor(210,210,210);
+        doc.setLineWidth(0.5);
+        doc.line(
+          data.cell.x,
+          data.cell.y + data.cell.height,
+          data.cell.x + data.cell.width,
+          data.cell.y + data.cell.height
+        );
+      }
+    },
+    columnStyles: {
+      1: { halign: 'right' },
+      2: { halign: 'right' },
+      3: { halign: 'right' },
+      4: { halign: 'right' },
+      5: { halign: 'right' }
+    }
   });
 
   y = doc.lastAutoTable.finalY + 10;
 
+  // Total geral
   doc.setFont("helvetica","bold");
   doc.setFontSize(14);
+  doc.setTextColor(0,0,0);
   doc.text("Total Geral: R$ " + totalGeral.toFixed(2), 195, y, { align: 'right' });
 
-  y += 12;
+  y += 10;
 
-  const label = "Forma de Pagamento:";
+  // Forma de pagamento (sem sobreposição)
   doc.setFont("helvetica","bold");
   doc.setFontSize(11);
-  doc.text(label, 15, y);
+  doc.setTextColor(0,0,0);
+
+  const label = "Forma de Pagamento:";
+  const labelX = 15;
+  doc.text(label, labelX, y);
 
   const labelW = doc.getTextWidth(label);
+  const valueX = labelX + labelW + 4;
   doc.setFont("helvetica","normal");
-  doc.text(pagamento, 15 + labelW + 4, y);
+  doc.setTextColor(90,90,90);
+  doc.text(pagamento || "-", valueX, y);
 
   y += 12;
 
+  // Observações
   if(obs){
     doc.setFont("helvetica","bold");
+    doc.setTextColor(0,0,0);
     doc.text("Observações:", 15, y);
     y += 6;
+
     doc.setFont("helvetica","normal");
+    doc.setTextColor(90,90,90);
+
     const linhas = doc.splitTextToSize(obs, 180);
     doc.text(linhas, 15, y);
     y += (linhas.length * 5) + 10;
+  } else {
+    y += 6;
   }
 
+  // Data no final
+  doc.setFont("helvetica","normal");
   doc.setFontSize(10);
+  doc.setTextColor(90,90,90);
   doc.text("Data: " + data, 15, y);
 
   y += 18;
 
+  // assinatura
+  doc.setDrawColor(160,160,160);
+  doc.setLineWidth(0.6);
   doc.line(55, y, 155, y);
   y += 6;
+  doc.setTextColor(90,90,90);
   doc.text("Assinatura do cliente", 105, y, { align: "center" });
 
-  doc.save("Orcamento_" + (cliente||"Cliente") + ".pdf");
+  // salvar e preparar compartilhar
+  lastPdfFilename = "Orcamento_" + ((cliente || "Cliente").replace(/[\\/:*?"<>|]/g, "")) + ".pdf";
+  lastPdfBlob = doc.output("blob");
+
+  // baixa o pdf normalmente
+  doc.save(lastPdfFilename);
+
+  // mostra botões de compartilhar
+  document.getElementById("shareArea").style.display = "block";
 });
 </script>
 
