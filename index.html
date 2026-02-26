@@ -3,193 +3,261 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RE Climatização - Proposta Comercial</title>
+<title>RE Climatização - Orçamento</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
 <style>
-@page {
-    size: A4;
-    margin: 12mm;
-}
-
 body{
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background:#f3f4f6;
-    margin:0;
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#f4f6f9;
 }
-
 .container{
-    max-width:850px;
-    margin:auto;
-    background:#ffffff;
-    padding:20px;
-    box-sizing:border-box;
+  padding:15px;
+  max-width:600px;
+  margin:auto;
 }
-
-/* LOGO */
-.logo-container{
-    text-align:center;
-    margin-bottom:8px;
+.card{
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:15px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
 }
-
-.logo{
-    width:150px;
+h2{
+  margin:0 0 10px 0;
+  color:#0077cc;
 }
-
-/* TÍTULO */
-h1{
-    font-size:17px;
-    text-align:center;
-    margin:8px 0 15px 0;
-    letter-spacing:1px;
+input, textarea, select{
+  width:100%;
+  padding:12px;
+  margin:6px 0 12px 0;
+  border-radius:10px;
+  border:1px solid #ccc;
+  font-size:16px;
 }
-
-/* SEÇÕES */
-.section{
-    margin-top:15px;
-}
-
-.section h2{
-    font-size:12px;
-    border-bottom:1px solid #e5e7eb;
-    padding-bottom:3px;
-    margin-bottom:6px;
-    font-weight:600;
-}
-
-/* INPUTS */
-input{
-    width:100%;
-    padding:6px;
-    margin:4px 0;
-    border:1px solid #d1d5db;
-    border-radius:5px;
-    font-size:12px;
-}
-
-/* SERVIÇOS */
-.row{
-    display:grid;
-    grid-template-columns: 2fr 0.7fr 0.9fr 0.9fr auto;
-    gap:6px;
-    margin-bottom:6px;
-}
-
-.sub{
-    display:flex;
-    align-items:center;
-    justify-content:flex-end;
-    font-weight:600;
-    font-size:12px;
-}
-
-/* TOTAL */
-.total{
-    margin-top:15px;
-    text-align:right;
-    font-size:14px;
-    font-weight:700;
-    border-top:1.5px solid #111827;
-    padding-top:6px;
-}
-
-/* ASSINATURA */
-.signature{
-    margin-top:40px;
-    border-top:1px solid #111827;
-    width:220px;
-    padding-top:4px;
-    font-size:11px;
-}
-
-/* BOTÕES */
 button{
-    margin-top:10px;
-    padding:8px;
-    background:#111827;
-    color:#fff;
-    border:none;
-    border-radius:5px;
-    cursor:pointer;
-    font-size:12px;
+  width:100%;
+  padding:15px;
+  border:none;
+  border-radius:10px;
+  background:#0077cc;
+  color:white;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
 }
-
-@media print{
-    body{background:#fff;}
-    button{display:none;}
+.total{
+  text-align:right;
+  font-weight:bold;
+  font-size:18px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+th, td{
+  border:1px solid #ddd;
+  padding:6px;
+  text-align:center;
 }
 </style>
 </head>
 
 <body>
-
 <div class="container">
 
-<div class="logo-container">
-    <img class="logo" src="./logo.png">
-</div>
+  <div class="card">
+    <h2>RE Climatização</h2>
 
-<h1>PROPOSTA COMERCIAL</h1>
+    <label>Cliente</label>
+    <input type="text" id="cliente">
 
-<div class="section">
-<h2>DADOS DO CLIENTE</h2>
-<input type="text" placeholder="Nome do Cliente">
-<input type="text" placeholder="Telefone">
-<input type="text" placeholder="Endereço do Serviço">
-</div>
+    <label>Telefone</label>
+    <input type="text" id="telefoneCliente">
 
-<div class="section">
-<h2>SERVIÇOS</h2>
-<div id="servicos"></div>
-<button onclick="adicionar()">Adicionar Serviço</button>
-</div>
+    <label>Endereço</label>
+    <input type="text" id="enderecoCliente">
 
-<div class="total">
-Total: R$ <span id="total">0.00</span>
-</div>
+    <label>Forma de Pagamento</label>
+    <select id="pagamento">
+      <option>Dinheiro</option>
+      <option>PIX</option>
+      <option>Cartão</option>
+      <option>Transferência</option>
+      <option>Parcelado</option>
+    </select>
 
-<div class="section">
-<h2>CONDIÇÕES</h2>
-<input type="text" placeholder="Forma de Pagamento">
-<input type="text" placeholder="Validade da Proposta">
-</div>
+    <label>Observações</label>
+    <textarea id="observacoes"></textarea>
+  </div>
 
-<div class="signature">
-Assinatura do Cliente
-</div>
+  <div class="card">
+    <h2>Serviços</h2>
 
-<button onclick="window.print()">Gerar PDF</button>
+    <input type="text" id="descricao" placeholder="Descrição">
+    <input type="number" id="quantidade" placeholder="Qtd">
+    <input type="number" id="valorUnitario" placeholder="Valor Unitário">
+    <input type="number" id="descontoServico" placeholder="Desconto R$" value="0">
 
+    <button type="button" id="btnAddServico">Adicionar Serviço</button>
+
+    <table id="tabela">
+      <thead>
+        <tr>
+          <th>Descrição</th>
+          <th>Qtd</th>
+          <th>Unit</th>
+          <th>Total</th>
+          <th>Desc</th>
+          <th>Líquido</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <p class="total">Total: R$ <span id="total">0.00</span></p>
+  </div>
+
+  <button type="button" id="btnGerarPDF">GERAR ORÇAMENTO</button>
 </div>
 
 <script>
-const servicos = document.getElementById("servicos");
+let totalGeral = 0;
 
-function adicionar(){
-    const row = document.createElement("div");
-    row.className = "row";
-    row.innerHTML = `
-        <input type="text" placeholder="Descrição">
-        <input type="number" value="1" min="1" onchange="calcular()">
-        <input type="number" value="0" step="0.01" onchange="calcular()">
-        <div class="sub">0.00</div>
-        <button onclick="this.parentElement.remove();calcular()">X</button>
-    `;
-    servicos.appendChild(row);
-}
+// Adicionar serviço
+document.getElementById("btnAddServico").addEventListener("click", function(){
+  const desc = document.getElementById("descricao").value;
+  const qtd = parseFloat(document.getElementById("quantidade").value);
+  const unit = parseFloat(document.getElementById("valorUnitario").value);
+  const desconto = parseFloat(document.getElementById("descontoServico").value) || 0;
 
-function calcular(){
-    let total = 0;
-    document.querySelectorAll(".row").forEach(r=>{
-        const qtd = parseFloat(r.children[1].value)||0;
-        const val = parseFloat(r.children[2].value)||0;
-        const sub = qtd*val;
-        r.children[3].innerText = sub.toFixed(2);
-        total += sub;
-    });
-    document.getElementById("total").innerText = total.toFixed(2);
-}
+  if(!desc || isNaN(qtd) || isNaN(unit)) return;
 
-adicionar();
+  const total = qtd * unit;
+  const liquido = total - desconto;
+
+  const tbody = document.querySelector("#tabela tbody");
+  const row = tbody.insertRow();
+  row.insertCell(0).innerText = desc;
+  row.insertCell(1).innerText = qtd;
+  row.insertCell(2).innerText = unit.toFixed(2);
+  row.insertCell(3).innerText = total.toFixed(2);
+  row.insertCell(4).innerText = desconto.toFixed(2);
+  row.insertCell(5).innerText = liquido.toFixed(2);
+
+  totalGeral = 0;
+  document.querySelectorAll("#tabela tbody tr").forEach(tr => {
+    totalGeral += parseFloat(tr.cells[5].innerText);
+  });
+
+  document.getElementById("total").innerText = totalGeral.toFixed(2);
+
+  document.getElementById("descricao").value = "";
+  document.getElementById("quantidade").value = "";
+  document.getElementById("valorUnitario").value = "";
+  document.getElementById("descontoServico").value = 0;
+});
+
+// Gerar PDF
+document.getElementById("btnGerarPDF").addEventListener("click", function() {
+
+  if(totalGeral === 0){
+    alert("Adicione pelo menos um serviço.");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const cliente = document.getElementById("cliente").value;
+  const telefone = document.getElementById("telefoneCliente").value;
+  const endereco = document.getElementById("enderecoCliente").value;
+  const pagamento = document.getElementById("pagamento").value;
+  const obs = document.getElementById("observacoes").value;
+  const data = new Date().toLocaleDateString();
+
+  // LOGO vindo do GitHub
+  doc.addImage("logo.png", "PNG", 15, 8, 60, 35);
+
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(26);
+  doc.text("RE Climatização", 80, 22);
+
+  doc.setDrawColor(210,225,245);
+  doc.setLineWidth(1);
+  doc.line(15, 40, 195, 40);
+
+  let y = 55;
+
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(11);
+  doc.text("Cliente:", 15, y);
+  doc.setFont("helvetica","normal");
+  doc.text(cliente, 40, y);
+
+  y += 7;
+  doc.text("Telefone: " + telefone, 15, y);
+  y += 7;
+  doc.text("Endereço: " + endereco, 15, y);
+
+  y += 12;
+
+  const body = Array.from(document.querySelectorAll("#tabela tbody tr")).map(tr =>
+    Array.from(tr.querySelectorAll("td")).map(td => td.innerText)
+  );
+
+  doc.autoTable({
+    startY: y,
+    head: [['Descrição','Qtd','Unit','Total','Desc','Líquido']],
+    body,
+    theme: 'plain',
+    styles: { fontSize: 10, cellPadding: 3 }
+  });
+
+  y = doc.lastAutoTable.finalY + 10;
+
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(14);
+  doc.text("Total Geral: R$ " + totalGeral.toFixed(2), 195, y, { align: 'right' });
+
+  y += 12;
+
+  const label = "Forma de Pagamento:";
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(11);
+  doc.text(label, 15, y);
+
+  const labelW = doc.getTextWidth(label);
+  doc.setFont("helvetica","normal");
+  doc.text(pagamento, 15 + labelW + 4, y);
+
+  y += 12;
+
+  if(obs){
+    doc.setFont("helvetica","bold");
+    doc.text("Observações:", 15, y);
+    y += 6;
+    doc.setFont("helvetica","normal");
+    const linhas = doc.splitTextToSize(obs, 180);
+    doc.text(linhas, 15, y);
+    y += (linhas.length * 5) + 10;
+  }
+
+  doc.setFontSize(10);
+  doc.text("Data: " + data, 15, y);
+
+  y += 18;
+
+  doc.line(55, y, 155, y);
+  y += 6;
+  doc.text("Assinatura do cliente", 105, y, { align: "center" });
+
+  doc.save("Orcamento_" + (cliente||"Cliente") + ".pdf");
+});
 </script>
 
 </body>
