@@ -23,8 +23,14 @@
     .container{ padding:15px; max-width:700px; margin:auto; }
     .card{ background:white; padding:15px; border-radius:12px; margin-bottom:15px; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
     h2{ margin:0 0 10px 0; color:#0077cc; }
-    input, textarea, select{ width:100%; padding:12px; margin:6px 0 12px 0; border-radius:10px; border:1px solid #ccc; font-size:16px; box-sizing:border-box; }
-    button{ width:100%; padding:15px; border:none; border-radius:10px; background:#0077cc; color:white; font-size:16px; font-weight:bold; cursor:pointer; }
+    input, textarea, select{
+      width:100%; padding:12px; margin:6px 0 12px 0;
+      border-radius:10px; border:1px solid #ccc; font-size:16px; box-sizing:border-box;
+    }
+    button{
+      width:100%; padding:15px; border:none; border-radius:10px;
+      background:#0077cc; color:white; font-size:16px; font-weight:bold; cursor:pointer;
+    }
     button.secondary{ background:#4a5568; }
     .row{ display:flex; gap:10px; }
     .row > *{ flex:1; }
@@ -73,6 +79,13 @@
     <div class="card">
       <h2>Serviços</h2>
 
+      <!-- ✅ Serviços pré-configurados -->
+      <label>Serviços prontos</label>
+      <select id="servicoPronto"></select>
+      <button type="button" class="secondary" id="btnAplicarServico">Aplicar serviço selecionado</button>
+
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;">
+
       <input type="text" id="descricao" placeholder="Descrição">
 
       <div class="row">
@@ -110,9 +123,21 @@
   </div>
 
   <script>
-    let totalGeral = 0;
+    // ✅ EDITE AQUI SUA LISTA DE SERVIÇOS PRONTOS
+    // Você pode colocar quantos quiser.
+    const SERVICOS_PRE = [
+      { nome: "Selecione um serviço...", desc: "", unit: "", qtd: "" },
 
-    // guarda o último PDF gerado para compartilhar
+      { nome: "Higienização Split 9.000 a 12.000 BTUs", desc: "Higienização de ar-condicionado Split (9.000 a 12.000 BTUs)", unit: 180.00, qtd: 1 },
+      { nome: "Higienização Split 18.000 a 24.000 BTUs", desc: "Higienização de ar-condicionado Split (18.000 a 24.000 BTUs)", unit: 200.00, qtd: 1 },
+
+      { nome: "Carga de gás (visita + diagnóstico)", desc: "Visita técnica + diagnóstico para carga de gás", unit: 80.00, qtd: 1 },
+
+      { nome: "Instalação Split até 12.000 BTUs", desc: "Instalação de ar-condicionado Split até 12.000 BTUs", unit: 650.00, qtd: 1 },
+      { nome: "Instalação Split 18.000 a 24.000 BTUs", desc: "Instalação de ar-condicionado Split (18.000 a 24.000 BTUs)", unit: 850.00, qtd: 1 }
+    ];
+
+    let totalGeral = 0;
     let lastPdfBlob = null;
     let lastPdfFilename = "Orcamento.pdf";
 
@@ -142,6 +167,42 @@
       });
     }
 
+    // ✅ Monta o select de serviços prontos
+    function popularServicosProntos(){
+      const sel = document.getElementById("servicoPronto");
+      sel.innerHTML = "";
+      SERVICOS_PRE.forEach((s, idx) => {
+        const opt = document.createElement("option");
+        opt.value = String(idx);
+        opt.textContent = s.nome;
+        sel.appendChild(opt);
+      });
+    }
+
+    // ✅ Aplica serviço selecionado (preenche os campos)
+    function aplicarServicoSelecionado(){
+      const sel = document.getElementById("servicoPronto");
+      const idx = parseInt(sel.value, 10);
+      const s = SERVICOS_PRE[idx];
+      if(!s || !s.desc) return;
+
+      document.getElementById("descricao").value = s.desc;
+      document.getElementById("valorUnitario").value = (s.unit ?? "");
+      document.getElementById("quantidade").value = (s.qtd ?? 1);
+
+      // opcional: zera desconto ao escolher serviço pronto
+      document.getElementById("descontoServico").value = 0;
+    }
+
+    // inicializa select
+    popularServicosProntos();
+
+    document.getElementById("btnAplicarServico").addEventListener("click", aplicarServicoSelecionado);
+
+    // bônus: ao trocar o select, já aplica automaticamente
+    document.getElementById("servicoPronto").addEventListener("change", aplicarServicoSelecionado);
+
+    // adicionar serviço
     document.getElementById("btnAddServico").addEventListener("click", function(){
       const desc = document.getElementById("descricao").value.trim();
       const qtd = parseFloat(document.getElementById("quantidade").value);
@@ -180,6 +241,7 @@
       document.getElementById("descontoServico").value = 0;
     });
 
+    // compartilhar
     document.getElementById("btnShare").addEventListener("click", async function(){
       if(!lastPdfBlob){
         alert("Gere o PDF antes de compartilhar.");
@@ -202,6 +264,7 @@
       window.open(`https://wa.me/?text=${msg}`, "_blank");
     });
 
+    // gerar PDF (mantém seu layout atual)
     document.getElementById("btnGerarPDF").addEventListener("click", async function() {
       if(totalGeral === 0){
         alert("Adicione pelo menos um serviço.");
@@ -228,30 +291,25 @@
       let logoDataUrl = null;
       try{ logoDataUrl = await loadImageAsDataURL("logo.png"); }catch(e){ logoDataUrl = null; }
 
-      // ===== CABEÇALHO =====
+      // Cabeçalho (logo + proposta + linha)
       if(logoDataUrl){
-        // logo maior (como estava no seu código)
         doc.addImage(logoDataUrl, "PNG", 15, 8, 100, 40);
       }
 
-      // Linha horizontal alinhada certinha (margens iguais)
-      doc.setDrawColor(...lineBlue);
-      doc.setLineWidth(1);
-
-      // "Proposta Comercial" mais embaixo, quase encostando na linha
       const lineY = 52;
-      const propostaY = 49; // quase rente à linha
+      const propostaY = 49;
 
       doc.setFont("helvetica","bold");
       doc.setFontSize(13);
       doc.setTextColor(0,0,0);
       doc.text("Proposta Comercial", centerX, propostaY, { align: "center" });
 
+      doc.setDrawColor(...lineBlue);
+      doc.setLineWidth(1);
       doc.line(margin, lineY, pageW - margin, lineY);
 
-      // ===== QUADRO CLIENTE (desce para não sobrepor) =====
+      // Quadro cliente
       let y = 65;
-
       doc.setFillColor(...boxBlue);
       doc.roundedRect(12, y-7, pageW - 24, 22, 3, 3, "F");
 
@@ -272,6 +330,7 @@
 
       y += 12;
 
+      // tabela
       const body = Array.from(document.querySelectorAll("#tabela tbody tr")).map(tr =>
         Array.from(tr.querySelectorAll("td")).slice(0,6).map(td => td.innerText)
       );
@@ -358,7 +417,7 @@
       document.getElementById("shareArea").style.display = "block";
     });
 
-    // ✅ PWA: registrar Service Worker
+    // PWA: registra service worker
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").catch(() => {});
