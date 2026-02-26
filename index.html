@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<img class="logo" src="./logo.png">
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -9,7 +8,7 @@
 <style>
 @page {
     size: A4;
-    margin: 15mm;
+    margin: 12mm;
 }
 
 body{
@@ -19,84 +18,99 @@ body{
 }
 
 .container{
-    max-width:900px;
+    max-width:850px;
     margin:auto;
     background:#ffffff;
-    padding:30px;
+    padding:20px;
     box-sizing:border-box;
 }
 
-.logo{
-    width:180px;
-    margin-bottom:15px;
+/* LOGO */
+.logo-container{
+    text-align:center;
+    margin-bottom:8px;
 }
 
+.logo{
+    width:150px;
+}
+
+/* TÍTULO */
 h1{
-    font-size:20px;
-    margin-bottom:20px;
-    margin-bottom:20px;
+    font-size:17px;
+    text-align:center;
+    margin:8px 0 15px 0;
     letter-spacing:1px;
 }
 
+/* SEÇÕES */
 .section{
-    margin-top:25px;
+    margin-top:15px;
 }
 
 .section h2{
-    font-size:14px;
+    font-size:12px;
     border-bottom:1px solid #e5e7eb;
-    padding-bottom:5px;
-    margin-bottom:10px;
+    padding-bottom:3px;
+    margin-bottom:6px;
+    font-weight:600;
 }
 
+/* INPUTS */
 input{
     width:100%;
-    padding:8px;
-    margin:6px 0;
+    padding:6px;
+    margin:4px 0;
     border:1px solid #d1d5db;
-    border-radius:6px;
-    font-size:13px;
+    border-radius:5px;
+    font-size:12px;
 }
 
+/* SERVIÇOS */
 .row{
     display:grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr auto;
-    gap:8px;
-    margin-bottom:8px;
+    grid-template-columns: 2fr 0.7fr 0.9fr 0.9fr auto;
+    gap:6px;
+    margin-bottom:6px;
 }
 
 .sub{
     display:flex;
     align-items:center;
     justify-content:flex-end;
-    font-weight:bold;
-}
-
-.total{
-    margin-top:25px;
-    text-align:right;
-    font-size:16px;
-    font-weight:bold;
-    border-top:2px solid #111827;
-    padding-top:10px;
-}
-
-.signature{
-    margin-top:60px;
-    border-top:1px solid #111827;
-    width:250px;
-    padding-top:5px;
+    font-weight:600;
     font-size:12px;
 }
 
-button{
+/* TOTAL */
+.total{
     margin-top:15px;
-    padding:10px;
+    text-align:right;
+    font-size:14px;
+    font-weight:700;
+    border-top:1.5px solid #111827;
+    padding-top:6px;
+}
+
+/* ASSINATURA */
+.signature{
+    margin-top:40px;
+    border-top:1px solid #111827;
+    width:220px;
+    padding-top:4px;
+    font-size:11px;
+}
+
+/* BOTÕES */
+button{
+    margin-top:10px;
+    padding:8px;
     background:#111827;
     color:#fff;
     border:none;
-    border-radius:6px;
+    border-radius:5px;
     cursor:pointer;
+    font-size:12px;
 }
 
 @media print{
@@ -105,11 +119,14 @@ button{
 }
 </style>
 </head>
+
 <body>
 
 <div class="container">
 
-
+<div class="logo-container">
+    <img class="logo" src="./logo.png">
+</div>
 
 <h1>PROPOSTA COMERCIAL</h1>
 
@@ -151,7 +168,7 @@ function adicionar(){
     const row = document.createElement("div");
     row.className = "row";
     row.innerHTML = `
-        <input type="text" placeholder="Descrição do serviço">
+        <input type="text" placeholder="Descrição">
         <input type="number" value="1" min="1" onchange="calcular()">
         <input type="number" value="0" step="0.01" onchange="calcular()">
         <div class="sub">0.00</div>
@@ -176,10 +193,4 @@ adicionar();
 </script>
 
 </body>
-
 </html>
-
-
-
-
-
