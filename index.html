@@ -322,18 +322,18 @@
 
       // Cabeçalho
       if(logoDataUrl){
-        doc.addImage(logoDataUrl, "PNG", 15, 8, 70, 40);
+        doc.addImage(logoDataUrl, "PNG", 15, 8, 100, 40);
       }
 
       doc.setFont("helvetica","bold");
-      doc.setFontSize(16);
+      doc.setFontSize(14);
       doc.setTextColor(0,0,0);
-      doc.text("Proposta Comercial", 80, 22);
+      doc.text("Proposta Comercial", 80, 60);
 
       // linha horizontal do cabeçalho
       doc.setDrawColor(...lineBlue);
       doc.setLineWidth(1);
-      doc.line(15, 40, 195, 40);
+      doc.line(15, 50, 195, 50);
 
       // quadro cliente (azul bem suave)
       let y = 52;
@@ -469,4 +469,5 @@
   </script>
 </body>
 </html>
+
 
