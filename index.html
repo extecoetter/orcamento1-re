@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>Proposta Comercial</title>
+<title>RE Climatização - Orçamento</title>
 <!-- PWA -->
 <link href="manifest.webmanifest" rel="manifest"/>
 <meta content="#0077cc" name="theme-color"/>
@@ -292,7 +292,7 @@
 <div id="tab-prontos" class="tab-pane">
   <label class="field-label">Serviços prontos</label>
   <select id="servicoPronto" class="item-select"></select>
-  <button class="secondary" id="btnAplicarServico" type="button" style="margin-top:10px;">Aplicar no formulário</button>
+  <button class="secondary" id="btnAplicarServico" type="button" style="margin-top:10px;">Adicionar serviço</button>
   <p class="muted" style="margin:10px 0 0 0;">Dica: ao aplicar, a descrição, quantidade e valor unitário são preenchidos automaticamente.</p>
 </div>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;"/>
@@ -772,11 +772,28 @@ function isMobile() {
     const s = SERVICOS_PRE[idx];
     if (!s || !s.desc) return;
 
-    dom.descricao().value = s.desc;
-    dom.valorUnitario().value = (typeof s.unit === "number" ? s.unit.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00");
-    dom.quantidade().value = (s.qtd ?? 1);
-    dom.descontoServico().value = "0,00";
+    // 1) Preenche o formulário (se existir)
+    if (dom.descricao()) dom.descricao().value = s.desc;
+    if (dom.valorUnitario()) dom.valorUnitario().value =
+      (typeof s.unit === "number"
+        ? s.unit.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : "0,00");
+    if (dom.quantidade()) dom.quantidade().value = (s.qtd ?? 1);
+    if (dom.descontoServico()) dom.descontoServico().value = "0,00";
+
+    // 2) Adiciona imediatamente (não precisa clicar em "Adicionar Item")
+    addItem({
+      desc: s.desc,
+      qtd: (s.qtd ?? 1),
+      unit: Number(s.unit || 0),
+      desconto: 0
+    });
+
+    // 3) Garante formulário aberto no mobile (pra ajustes rápidos)
+    const form = dom.addForm();
+    if (form) form.classList.add("open");
   }
+
 
   // =========================
   // Adicionar item (form)
@@ -1001,13 +1018,11 @@ function isMobile() {
     const form = dom.addForm();
     if (!btn || !form) return;
 
-    function sync() {
-      if (isMobile()) form.classList.remove("open");
-      else form.classList.add("open");
-    }
+    // Em iPhone/Safari, rolar a página pode disparar "resize" (barra do navegador),
+    // e isso fazia o formulário abrir/fechar e dava a sensação de sumir itens.
+    // Então aqui a gente NÃO usa resize: o usuário controla.
 
-    sync();
-    window.addEventListener("resize", sync);
+    if (!isMobile()) form.classList.add("open"); // desktop abre por padrão
 
     btn.addEventListener("click", () => {
       form.classList.toggle("open");
@@ -1019,31 +1034,7 @@ function isMobile() {
     });
   }
 
-    // =========================
-  // Tabs (Serviços)
   // =========================
-  function initTabs() {
-    const btns = $$(".tab-btn");
-    if (!btns.length) return;
-
-    const panes = $$(".tab-pane");
-    function activate(id) {
-      btns.forEach(b => b.classList.toggle("active", b.dataset.tab === id));
-      panes.forEach(p => p.classList.toggle("active", p.id === id));
-
-      // quando entrar em "serviços prontos", abre o formulário para receber os dados
-      if (id === "tab-prontos") {
-        const form = dom.addForm();
-        if (form) form.classList.add("open");
-      }
-    }
-
-    btns.forEach((b) => b.addEventListener("click", () => activate(b.dataset.tab)));
-
-    activate("tab-add");
-  }
-
-// =========================
   // PWA
   // =========================
   function initPWA() {
