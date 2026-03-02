@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>Proposta Comercial</title>
+<title>RE Climatização - Orçamento</title>
 <!-- PWA -->
 <link href="manifest.webmanifest" rel="manifest"/>
 <meta content="#0077cc" name="theme-color"/>
@@ -222,19 +222,30 @@
 <div class="card">
 <h2>Serviços</h2>
 <!-- ✅ Serviços pré-configurados -->
-<label>Serviços prontos</label>
+<div id="servicosProntosBlock"><label>Serviços prontos</label>
 <select id="servicoPronto"></select>
-<button class="secondary" id="btnAplicarServico" type="button">Aplicar serviço selecionado</button>
+<button class="secondary" id="btnAplicarServico" type="button">Aplicar serviço selecionado</button></div>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;"/>
 <button class="btn-dashed" id="btnToggleAdd" type="button"><span class="plus">+</span>ADICIONAR ITEM</button>
 <div id="addForm"><label class="field-label">Descrição</label>
 
 <input id="descricao" placeholder="Descrição" type="text"/>
-<div class="row">
-<input id="quantidade" placeholder="Qtd" type="number"/>
-<input id="valorUnitario" placeholder="Valor Unitário" type="number"/>
-<input id="descontoServico" placeholder="Desconto R$" type="number" value="0"/>
+
+<div class="field-grid-3">
+  <div>
+    <label class="field-label">Quantidade</label>
+    <input id="quantidade" placeholder="Qtd" type="number"/>
+  </div>
+  <div>
+    <label class="field-label">Valor unitário</label>
+    <input id="valorUnitario" placeholder="Valor Unitário" type="number"/>
+  </div>
+  <div>
+    <label class="field-label">Desconto</label>
+    <input id="descontoServico" placeholder="Desconto R$" type="number" value="0"/>
+  </div>
 </div>
+
 <button id="btnAddServico" type="button">Adicionar Serviço</button>
 </div><!-- /addForm -->
 <div class="itens-cards" id="itensCards"></div>
