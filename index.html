@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>RE Climatização - Orçamento</title>
+<title>Proposta Comercial</title>
 <!-- PWA -->
 <link href="manifest.webmanifest" rel="manifest"/>
 <meta content="#0077cc" name="theme-color"/>
@@ -16,7 +16,63 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <style>
-    body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
+    
+    /* ===== Premium look ===== */
+    :root{
+      --bg:#f6f8fc;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#e2e8f0;
+      --brand:#2563eb;
+      --shadow:0 10px 30px rgba(2,8,23,.08);
+      --radius:18px;
+    }
+    body{ background:var(--bg); color:var(--text); }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    h2{ letter-spacing:-.01em; }
+    button{
+      border-radius:16px !important;
+      font-weight:900;
+    }
+    button.secondary{
+      background:#f1f5f9;
+      border:1px solid var(--line);
+      color:var(--text);
+    }
+    #btnGerarPDF{
+      background:linear-gradient(135deg, var(--brand), #0ea5e9) !important;
+      border:none !important;
+      color:#fff !important;
+      box-shadow:0 14px 28px rgba(37,99,235,.18);
+    }
+    input, textarea, select{
+      border:1px solid var(--line) !important;
+      border-radius:16px !important;
+      background:#fbfdff !important;
+      box-shadow: inset 0 1px 0 rgba(2,8,23,.03);
+    }
+    input:focus, textarea:focus, select:focus{
+      outline:none;
+      border-color:rgba(37,99,235,.55) !important;
+      box-shadow:0 0 0 4px rgba(37,99,235,.14);
+    }
+    #servicosProntosBlock{
+      padding:12px;
+      border:1px dashed #cbd5e1;
+      border-radius:16px;
+      background:#ffffff;
+      margin:10px 0 14px;
+    }
+    #servicosProntosBlock label{ font-weight:900; color:var(--muted); }
+    #servicosProntosBlock select{ height:52px; font-weight:800; }
+
+body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
     .container{ padding:15px; max-width:700px; margin:auto; }
     .card{ background:white; padding:15px; border-radius:12px; margin-bottom:15px; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
     h2{ margin:0 0 10px 0; color:#0077cc; }
@@ -106,7 +162,7 @@
     }
     .item-card .meta b{ color:#111827; }
     /* Removido: Serviços prontos (substituído por "ADICIONAR ITEM") */
-    #servicosProntosBlock{ display:none; }
+    #servicosProntosBlock{ display:block; }
     .field-label{
       display:block;
       font-size:12px;
@@ -195,7 +251,7 @@
 <body>
 <div class="container">
 <div class="card">
-<h2>RE Climatização</h2>
+<h2>Proposta Comercial</h2>
 <label>Cliente</label>
 <input id="cliente" type="text"/>
 <div class="row">
@@ -604,7 +660,7 @@ function loadImageAsDataURL(src){
 
       if(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })){
         try{
-          await navigator.share({ title: "Orçamento RE Climatização", text: "Segue o orçamento em PDF.", files: [file] });
+          await navigator.share({ title: "Orçamento Proposta Comercial", text: "Segue o orçamento em PDF.", files: [file] });
         }catch(e){}
       }else{
         alert("Seu navegador não suporta compartilhar arquivo direto. Use o botão 'Abrir WhatsApp (mensagem)' e anexe o PDF manualmente.");
@@ -756,13 +812,6 @@ function loadImageAsDataURL(src){
       y += 18;
 
       doc.setDrawColor(160,160,160);
-      doc.setLineWidth(0.6);
-      doc.line(55, y, 155, y);
-      y += 6;
-
-      doc.setTextColor(90,90,90);
-      doc.text("Assinatura do cliente", 105, y, { align: "center" });
-
       lastPdfFilename = "Orcamento_" + ((cliente || "Cliente").replace(/[\\/:*?"<>|]/g, "")) + ".pdf";
       lastPdfBlob = doc.output("blob");
 
@@ -780,6 +829,211 @@ function loadImageAsDataURL(src){
 
     window.addEventListener('load', () => { try{ renderItensCards(); }catch(e){} });
 </script>
+
+<script>
+/* ===== RECOVERY PATCH (botões + adicionar + total + serviços) ===== */
+(function(){
+  function parseMoneyBR(v){
+    if(v === null || v === undefined) return 0;
+    const s = String(v).replace(/[^\d,.-]/g,"").replace(/\./g,"").replace(",",".");
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+  function formatMoneyBR(n){
+    try{ return (Number(n)||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    catch(e){ return "0,00"; }
+  }
+
+  const els = {
+    selSrv: document.getElementById("servicoPronto"),
+    btnApply: document.getElementById("btnAplicarServico"),
+    btnAddBlank: document.getElementById("btnToggleAdd"),
+    form: document.getElementById("addForm"),
+    btnAddServico: document.getElementById("btnAddServico"),
+    btnPDF: document.getElementById("btnGerarPDF"),
+    total: document.getElementById("total"),
+    tbody: document.querySelector("#tabela tbody"),
+  };
+
+  function getInput(id){ return document.getElementById(id); }
+
+  function clearForm(){
+    const desc = getInput("descricao");
+    const qtd  = getInput("quantidade");
+    const unit = getInput("valorUnitario");
+    const des  = getInput("descontoServico");
+    if(desc) desc.value = "";
+    if(qtd)  qtd.value  = "";
+    if(unit) unit.value = "";
+    if(des)  des.value  = "0,00";
+  }
+
+  function openForm(){
+    if(!els.form) return;
+    els.form.classList.add("open");
+    try{ els.form.scrollIntoView({behavior:"smooth", block:"start"}); }catch(e){}
+  }
+
+  const SERVICES_ALL = [
+    { nome: "Selecione um serviço...", desc: "", unit: 0, qtd: 1 },
+    { nome: "Higienização Split 9.000 a 12.000 BTUs", desc: "Higienização Split 9.000 a 12.000 BTUs", unit: 0, qtd: 1 },
+    { nome: "Higienização Split 18.000 a 24.000 BTUs", desc: "Higienização Split 18.000 a 24.000 BTUs", unit: 0, qtd: 1 },
+    { nome: "Instalação Split até 12.000 BTUs", desc: "Instalação Split até 12.000 BTUs", unit: 0, qtd: 1 },
+    { nome: "Instalação Multi-Split (por evaporadora)", desc: "Instalação Multi-Split (por evaporadora)", unit: 0, qtd: 1 },
+    { nome: "Desinstalação de Equipamento", desc: "Desinstalação de Equipamento", unit: 0, qtd: 1 },
+    { nome: "Limpeza Química (desmontagem e lavagem)", desc: "Limpeza Química (desmontagem e lavagem)", unit: 0, qtd: 1 },
+    { nome: "Carga de Gás", desc: "Carga de Gás", unit: 0, qtd: 1 },
+    { nome: "Troca de Componente eletrônico", desc: "Troca de Componente eletrônico", unit: 0, qtd: 1 },
+    { nome: "Teste de Estanquidade", desc: "Teste de Estanquidade", unit: 0, qtd: 1 },
+    { nome: "Vácuo no Sistema", desc: "Vácuo no Sistema", unit: 0, qtd: 1 },
+    { nome: "Visita Técnica / Diagnóstico", desc: "Visita Técnica / Diagnóstico", unit: 0, qtd: 1 },
+    { nome: "Infra Estrutura", desc: "Infra Estrutura", unit: 0, qtd: 1 },
+    { nome: "Instalação/Manutenção Bomba de Dreno", desc: "Instalação/Manutenção Bomba de Dreno", unit: 0, qtd: 1 },
+  ];
+
+  function populateServices(){
+    if(!els.selSrv) return;
+    if(els.selSrv.options && els.selSrv.options.length > 0) return;
+    SERVICES_ALL.forEach((s, idx) => {
+      const opt = document.createElement("option");
+      opt.value = idx === 0 ? "0" : s.nome;
+      opt.textContent = s.nome;
+      els.selSrv.appendChild(opt);
+    });
+  }
+  populateServices();
+
+  function syncApplyBtn(){
+    if(!els.btnApply || !els.selSrv) return;
+    const ok = !!(els.selSrv.value && els.selSrv.value !== "0");
+    els.btnApply.disabled = !ok;
+    els.btnApply.style.opacity = ok ? "1" : "0.6";
+  }
+  if(els.selSrv){
+    els.selSrv.onchange = syncApplyBtn;
+    syncApplyBtn();
+  }
+
+  if(els.btnApply){
+    els.btnApply.onclick = function(){
+      if(!els.selSrv) return;
+      const raw = els.selSrv.value || "0";
+      if(raw === "0") return;
+
+      let s = null;
+      try{
+        if(typeof SERVICOS_PRE !== "undefined" && Array.isArray(SERVICOS_PRE)){
+          s = SERVICOS_PRE.find(x => x && (x.nome === raw || x.desc === raw)) || null;
+        }
+      }catch(e){}
+      if(!s){
+        s = SERVICES_ALL.find(x => x.nome === raw) || null;
+      }
+
+      const desc = getInput("descricao");
+      const qtd  = getInput("quantidade");
+      const unit = getInput("valorUnitario");
+      const des  = getInput("descontoServico");
+
+      if(desc) desc.value = (s?.desc || raw);
+      if(qtd)  qtd.value  = String(s?.qtd ?? 1);
+      if(unit) unit.value = formatMoneyBR(Number(s?.unit ?? 0));
+      if(des)  des.value  = "0,00";
+
+      openForm();
+    };
+  }
+
+  if(els.btnAddBlank){
+    els.btnAddBlank.onclick = function(){
+      clearForm();
+      if(els.selSrv){ els.selSrv.value = "0"; syncApplyBtn(); }
+      openForm();
+      try{ getInput("descricao")?.focus(); }catch(e){}
+    };
+  }
+
+  function ensureRemoveButton(row){
+    const actionCell = row.cells[6] || row.insertCell(6);
+    actionCell.innerHTML = "";
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn-remove";
+    b.textContent = "Remover";
+    b.onclick = function(){
+      row.remove();
+      recalcTotal();
+      try{ window.renderItensCards && renderItensCards(); }catch(e){}
+    };
+    actionCell.appendChild(b);
+  }
+
+  function recalcTotal(){
+    if(!els.tbody || !els.total) return;
+    let total = 0;
+    Array.from(els.tbody.querySelectorAll("tr")).forEach(tr=>{
+      const v = tr.cells[5]?.innerText ?? "0";
+      total += parseMoneyBR(v);
+    });
+    els.total.textContent = formatMoneyBR(total);
+  }
+
+  if(els.btnAddServico){
+    els.btnAddServico.onclick = function(){
+      const descV = (getInput("descricao")?.value || "").trim();
+      const qtdV  = parseFloat(getInput("quantidade")?.value || "");
+      const unitV = parseMoneyBR(getInput("valorUnitario")?.value || "");
+      const desV  = parseMoneyBR(getInput("descontoServico")?.value || "0,00");
+
+      if(!descV){ alert("Preencha a descrição."); return; }
+      if(!isFinite(qtdV) || qtdV <= 0){ alert("Preencha a quantidade."); return; }
+      if(!isFinite(unitV) || unitV < 0){ alert("Preencha o valor unitário."); return; }
+      if(!els.tbody){ alert("Tabela não encontrada."); return; }
+
+      const total = qtdV * unitV;
+      const liquido = total - desV;
+
+      const row = els.tbody.insertRow();
+      row.insertCell(0).innerText = descV;
+      row.cells[0].className = "desc";
+      row.insertCell(1).innerText = String(qtdV);
+      row.insertCell(2).innerText = unitV.toFixed(2);
+      row.insertCell(3).innerText = total.toFixed(2);
+      row.insertCell(4).innerText = desV.toFixed(2);
+      row.insertCell(5).innerText = liquido.toFixed(2);
+      ensureRemoveButton(row);
+
+      recalcTotal();
+      try{ window.renderItensCards && renderItensCards(); }catch(e){}
+
+      clearForm();
+    };
+  }
+
+  ["valorUnitario","descontoServico"].forEach(id=>{
+    const el = getInput(id);
+    if(!el) return;
+    el.addEventListener("blur", ()=>{ el.value = formatMoneyBR(parseMoneyBR(el.value)); });
+  });
+
+  recalcTotal();
+
+  if(els.btnPDF){
+    const old = els.btnPDF.onclick;
+    els.btnPDF.onclick = function(){
+      try{
+        if(typeof gerarPDF === "function"){ return gerarPDF(); }
+        if(typeof gerarOrcamento === "function"){ return gerarOrcamento(); }
+        if(old) return old.call(this);
+      }catch(e){
+        alert("Erro ao gerar PDF: " + (e?.message || e));
+        return;
+      }
+      alert("Não encontrei a função de gerar PDF no código.");
+    };
+  }
+})();
+</script>
+
 </body>
 </html>
-
