@@ -444,7 +444,7 @@
   function parseNum(value) {
     // Aceita: number, "12.34", "12,34", "1.234,56", "1,234.56"
     if (typeof value === "number") return value;
-    const s = String(value ?? "").trim();
+    const s = String((value !== null && value !== undefined) ? value : "").trim();
     if (!s) return 0;
 
     let x = s.replace(/\s+/g, "");
@@ -732,7 +732,7 @@ function isMobile() {
           desc: s.desc || s.nome,
           unit: Number(s.unit || 0),
           // mantém qtd atual se existir, senão usa o padrão do serviço
-          qtd: clampMin(it.qtd || (s.qtd ?? 1), 1),
+          qtd: clampMin(it.qtd || ((s.qtd !== null && s.qtd !== undefined) ? s.qtd : 1), 1),
         });
       });
 
@@ -778,13 +778,13 @@ function isMobile() {
       (typeof s.unit === "number"
         ? s.unit.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         : "0,00");
-    if (dom.quantidade()) dom.quantidade().value = (s.qtd ?? 1);
+    if (dom.quantidade()) dom.quantidade().value = ((s.qtd !== null && s.qtd !== undefined) ? s.qtd : 1);
     if (dom.descontoServico()) dom.descontoServico().value = "0,00";
 
     // 2) Adiciona imediatamente (não precisa clicar em "Adicionar Item")
     addItem({
       desc: s.desc,
-      qtd: (s.qtd ?? 1),
+      qtd: ((s.qtd !== null && s.qtd !== undefined) ? s.qtd : 1),
       unit: Number(s.unit || 0),
       desconto: 0
     });
@@ -1048,14 +1048,27 @@ function isMobile() {
   // Init
   // =========================
   function bindEvents() {
-    dom.btnAddServico()?.addEventListener("click", addServicoFromForm);
-    dom.btnShare()?.addEventListener("click", sharePdf);
-    dom.btnWhatsAppFallback()?.addEventListener("click", openWhatsAppFallback);
-    dom.btnGerarPDF()?.addEventListener("click", gerarPdf);
+    var el;
 
-    dom.btnAplicarServico()?.addEventListener("click", aplicarServicoSelecionado);
-    dom.servicoPronto()?.addEventListener("change", aplicarServicoSelecionado);
+    el = dom.btnAddServico();
+    if (el) el.addEventListener("click", addServicoFromForm);
+
+    el = dom.btnShare();
+    if (el) el.addEventListener("click", sharePdf);
+
+    el = dom.btnWhatsAppFallback();
+    if (el) el.addEventListener("click", openWhatsAppFallback);
+
+    el = dom.btnGerarPDF();
+    if (el) el.addEventListener("click", gerarPdf);
+
+    el = dom.btnAplicarServico();
+    if (el) el.addEventListener("click", aplicarServicoSelecionado);
+
+    el = dom.servicoPronto();
+    if (el) el.addEventListener("change", aplicarServicoSelecionado);
   }
+
 
   function init() {
     popularServicosProntos();
