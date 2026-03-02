@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>RE Climatização - Orçamento</title>
+<title>Proposta Comercial</title>
 <!-- PWA -->
 <link href="manifest.webmanifest" rel="manifest"/>
 <meta content="#0077cc" name="theme-color"/>
@@ -105,6 +105,29 @@
       color:#6b7280; font-size:13px; font-weight:700;
     }
     .item-card .meta b{ color:#111827; }
+    /* Removido: Serviços prontos (substituído por "ADICIONAR ITEM") */
+    #servicosProntosBlock{ display:none; }
+    .field-label{
+      display:block;
+      font-size:12px;
+      font-weight:800;
+      color:#64748b;
+      margin:10px 0 6px;
+      letter-spacing:0.02em;
+      text-transform:uppercase;
+    }
+    .field-grid-3{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 768px){
+      .field-grid-3{ grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+
+
+
 
     
     /* ===== Mobile premium controls ===== */
@@ -204,7 +227,8 @@
 <button class="secondary" id="btnAplicarServico" type="button">Aplicar serviço selecionado</button>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;"/>
 <button class="btn-dashed" id="btnToggleAdd" type="button"><span class="plus">+</span>ADICIONAR ITEM</button>
-<div id="addForm">
+<div id="addForm"><label class="field-label">Descrição</label>
+
 <input id="descricao" placeholder="Descrição" type="text"/>
 <div class="row">
 <input id="quantidade" placeholder="Qtd" type="number"/>
