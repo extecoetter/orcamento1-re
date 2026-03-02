@@ -273,8 +273,10 @@
 </div>
 <script>
 /**
- * RE Climatização - Orçamento (refatoração)
- * Objetivo: organizar o código e reduzir "efeito sanfona" sem mudar o funcionamento.
+ * RE Climatização - Orçamento (fase 2: fonte única de dados)
+ * - items[] é a "verdade"
+ * - Tabela e Cards são apenas renderizações
+ * - Menos chances de "efeito sanfona"
  */
 
 (() => {
@@ -313,6 +315,7 @@
   // Estado
   // =========================
   const state = {
+    items: [], // {id, desc, qtd, unit, desconto}
     totalGeral: 0,
     lastPdfBlob: null,
     lastPdfFilename: "Orcamento.pdf",
@@ -355,8 +358,13 @@
   };
 
   // =========================
-  // Utils (números, texto)
+  // Utils
   // =========================
+  function uid() {
+    // id curto estável para identificar itens
+    return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(4);
+  }
+
   function clampMin(n, min) {
     n = Number(n);
     if (Number.isNaN(n)) return min;
@@ -364,6 +372,7 @@
   }
 
   function parseNum(value) {
+    // Aceita: number, "12.34", "12,34", "1.234,56", "1,234.56"
     if (typeof value === "number") return value;
     const s = String(value ?? "").trim();
     if (!s) return 0;
@@ -406,79 +415,100 @@
     return window.matchMedia(`(max-width: ${CONFIG.MOBILE_BREAKPOINT}px)`).matches;
   }
 
+  function calcItem(item) {
+    const qtd = parseNum(item.qtd);
+    const unit = parseNum(item.unit);
+    const desconto = parseNum(item.desconto);
+    const total = qtd * unit;
+    const liquido = total - desconto;
+    return { total, liquido };
+  }
+
   // =========================
-  // Linha/tabela: leitura e escrita
+  // CRUD de itens (fonte única)
   // =========================
-  function getRowNumbers(row) {
-    const cells = row.cells;
-    const qtd = parseNum(cells[1]?.innerText);
-    const unit = parseNum(cells[2]?.innerText);
-    const desc = parseNum(cells[4]?.innerText);
-    return { qtd, unit, desc };
+  function addItem({ desc, qtd, unit, desconto }) {
+    const item = {
+      id: uid(),
+      desc: String(desc || "").trim(),
+      qtd: parseNum(qtd),
+      unit: parseNum(unit),
+      desconto: parseNum(desconto),
+    };
+    state.items.push(item);
+    recalcAndRender();
   }
 
-  function setRowValues(row, { descTxt, qtd, unit, desconto }) {
-    const total = (qtd || 0) * (unit || 0);
-    const liquido = total - (desconto || 0);
-
-    if (typeof descTxt === "string") {
-      row.cells[0].innerText = descTxt;
-      row.cells[0].className = "desc";
-    }
-    row.cells[1].innerText = String(qtd);
-    row.cells[2].innerText = toFixed2(unit);
-    row.cells[3].innerText = toFixed2(total);
-    row.cells[4].innerText = toFixed2(desconto);
-    row.cells[5].innerText = toFixed2(liquido);
-
-    row.dataset.liquido = String(liquido);
+  function removeItem(id) {
+    state.items = state.items.filter((it) => it.id !== id);
+    recalcAndRender();
   }
 
-  function attachRemoveButton(row) {
-    const actionCell = row.cells[6] || row.insertCell(6);
-    actionCell.innerHTML = "";
-    const btn = document.createElement("button");
-    btn.className = "btn-remove";
-    btn.type = "button";
-    btn.innerText = "Remover";
-    btn.addEventListener("click", () => {
-      row.remove();
-      recalcAndRender();
-    });
-    actionCell.appendChild(btn);
+  function updateItem(id, patch) {
+    const it = state.items.find((x) => x.id === id);
+    if (!it) return;
+    Object.assign(it, patch);
+    // normaliza números quando necessário
+    if (patch.qtd !== undefined) it.qtd = parseNum(it.qtd);
+    if (patch.unit !== undefined) it.unit = parseNum(it.unit);
+    if (patch.desconto !== undefined) it.desconto = parseNum(it.desconto);
+    recalcAndRender();
   }
 
-  function recalculateTotalFromTable() {
+  // =========================
+  // Cálculos + render
+  // =========================
+  function recalculateTotal() {
     let total = 0;
-    $$("#tabela tbody tr").forEach((tr) => {
-      total += parseNum(tr.dataset.liquido) || parseNum(tr.cells[5]?.innerText);
+    state.items.forEach((it) => {
+      total += calcItem(it).liquido;
     });
     state.totalGeral = total;
     dom.totalSpan().innerText = toFixed2(total);
   }
 
-  function recalcAndRender() {
-    recalculateTotalFromTable();
-    renderItensCards();
+  function renderTable() {
+    const tbody = dom.tabelaBody();
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+    state.items.forEach((it) => {
+      const { total, liquido } = calcItem(it);
+      const row = tbody.insertRow();
+      row.dataset.id = it.id;
+
+      row.insertCell(0).innerText = it.desc;
+      row.cells[0].className = "desc";
+
+      row.insertCell(1).innerText = String(it.qtd);
+      row.insertCell(2).innerText = toFixed2(it.unit);
+      row.insertCell(3).innerText = toFixed2(total);
+      row.insertCell(4).innerText = toFixed2(it.desconto);
+      row.insertCell(5).innerText = toFixed2(liquido);
+
+      const actionCell = row.insertCell(6);
+      const btn = document.createElement("button");
+      btn.className = "btn-remove";
+      btn.type = "button";
+      btn.innerText = "Remover";
+      btn.addEventListener("click", () => removeItem(it.id));
+      actionCell.appendChild(btn);
+    });
   }
 
-  // =========================
-  // Cards mobile
-  // =========================
-  function renderItensCards() {
+  function renderCards() {
     const wrap = dom.itensCards();
     if (!wrap) return;
 
-    const rows = $$("#tabela tbody tr");
     wrap.innerHTML = "";
 
-    rows.forEach((row) => {
-      const descTxt = row.cells[0]?.innerText || "";
-      const { qtd, unit } = getRowNumbers(row);
+    state.items.forEach((it) => {
+      const { total, liquido } = calcItem(it);
 
       const card = document.createElement("div");
       card.className = "item-card";
 
+      // Top row: select + trash
       const top = document.createElement("div");
       top.className = "top";
 
@@ -487,7 +517,7 @@
 
       const optCustom = document.createElement("option");
       optCustom.value = "-1";
-      optCustom.textContent = descTxt || "Item";
+      optCustom.textContent = it.desc || "Item";
       sel.appendChild(optCustom);
 
       SERVICOS_PRE.forEach((s, idx) => {
@@ -495,7 +525,7 @@
         const opt = document.createElement("option");
         opt.value = String(idx);
         opt.textContent = s.nome;
-        if (descTxt && (descTxt.includes(s.nome) || descTxt === s.desc)) opt.selected = true;
+        if (it.desc && (it.desc.includes(s.nome) || it.desc === s.desc)) opt.selected = true;
         sel.appendChild(opt);
       });
 
@@ -504,14 +534,12 @@
       del.className = "icon-btn";
       del.setAttribute("aria-label", "Remover item");
       del.innerHTML = "🗑️";
-      del.addEventListener("click", () => {
-        row.remove();
-        recalcAndRender();
-      });
+      del.addEventListener("click", () => removeItem(it.id));
 
       top.appendChild(sel);
       top.appendChild(del);
 
+      // Row 2: money + stepper
       const row2 = document.createElement("div");
       row2.className = "row2";
 
@@ -525,13 +553,10 @@
       const moneyInput = document.createElement("input");
       moneyInput.type = "text";
       moneyInput.inputMode = "decimal";
-      moneyInput.value = fmtBR(unit);
+      moneyInput.value = fmtBR(it.unit);
 
       moneyInput.addEventListener("change", () => {
-        const v = parseNum(moneyInput.value);
-        const nums = getRowNumbers(row);
-        setRowValues(row, { qtd: nums.qtd, unit: v, desconto: nums.desc });
-        recalcAndRender();
+        updateItem(it.id, { unit: parseNum(moneyInput.value) });
       });
 
       money.appendChild(prefix);
@@ -544,23 +569,17 @@
       btnMinus.type = "button";
       btnMinus.textContent = "−";
       btnMinus.addEventListener("click", () => {
-        const nums = getRowNumbers(row);
-        const next = clampMin(nums.qtd - 1, 1);
-        setRowValues(row, { qtd: next, unit: nums.unit, desconto: nums.desc });
-        recalcAndRender();
+        updateItem(it.id, { qtd: clampMin(it.qtd - 1, 1) });
       });
 
       const mid = document.createElement("span");
-      mid.textContent = String(qtd);
+      mid.textContent = String(it.qtd);
 
       const btnPlus = document.createElement("button");
       btnPlus.type = "button";
       btnPlus.textContent = "+";
       btnPlus.addEventListener("click", () => {
-        const nums = getRowNumbers(row);
-        const next = clampMin(nums.qtd + 1, 1);
-        setRowValues(row, { qtd: next, unit: nums.unit, desconto: nums.desc });
-        recalcAndRender();
+        updateItem(it.id, { qtd: clampMin(it.qtd + 1, 1) });
       });
 
       step.appendChild(btnMinus);
@@ -570,46 +589,44 @@
       row2.appendChild(money);
       row2.appendChild(step);
 
+      // Meta
       const meta = document.createElement("div");
       meta.className = "meta";
+      meta.innerHTML =
+        `<span>Total: <b>${CONFIG.CURRENCY_PREFIX} ${fmtBR(total)}</b></span>
+         <span>Desc: <b>${CONFIG.CURRENCY_PREFIX} ${fmtBR(it.desconto)}</b></span>
+         <span>Líquido: <b>${CONFIG.CURRENCY_PREFIX} ${fmtBR(liquido)}</b></span>`;
 
-      function refreshMeta() {
-        const nums = getRowNumbers(row);
-        const totalTxt = row.cells[3]?.innerText ?? "0.00";
-        const liquidoTxt = row.cells[5]?.innerText ?? "0.00";
-        meta.innerHTML =
-          `<span>Total: <b>${CONFIG.CURRENCY_PREFIX} ${fmtBR(totalTxt)}</b></span>
-           <span>Desc: <b>${CONFIG.CURRENCY_PREFIX} ${fmtBR(nums.desc)}</b></span>
-           <span>Líquido: <b>${CONFIG.CURRENCY_PREFIX} ${fmtBR(liquidoTxt)}</b></span>`;
-        mid.textContent = String(nums.qtd);
-        moneyInput.value = fmtBR(nums.unit);
-      }
-      refreshMeta();
-
+      // Aplicar serviço pronto pelo select do card
       sel.addEventListener("change", () => {
         const idx = parseInt(sel.value, 10);
         if (Number.isNaN(idx) || idx < 1) return;
         const s = SERVICOS_PRE[idx];
         if (!s) return;
-
-        const nums = getRowNumbers(row);
-        const nextQtd = nums.qtd || (s.qtd ?? 1);
-        setRowValues(row, { descTxt: s.desc || s.nome, qtd: nextQtd, unit: Number(s.unit || 0), desconto: nums.desc });
-        recalcAndRender();
+        updateItem(it.id, {
+          desc: s.desc || s.nome,
+          unit: Number(s.unit || 0),
+          // mantém qtd atual se existir, senão usa o padrão do serviço
+          qtd: clampMin(it.qtd || (s.qtd ?? 1), 1),
+        });
       });
-
-      const obs = new MutationObserver(refreshMeta);
-      obs.observe(row, { childList: true, subtree: true, characterData: true });
 
       card.appendChild(top);
       card.appendChild(row2);
       card.appendChild(meta);
+
       wrap.appendChild(card);
     });
   }
 
+  function recalcAndRender() {
+    recalculateTotal();
+    renderTable();
+    renderCards();
+  }
+
   // =========================
-  // Serviços prontos (bloco oculto)
+  // Serviços prontos (bloco oculto - ainda funciona)
   // =========================
   function popularServicosProntos() {
     const sel = dom.servicoPronto();
@@ -637,7 +654,7 @@
   }
 
   // =========================
-  // Adicionar item
+  // Adicionar item (form)
   // =========================
   function addServicoFromForm() {
     const desc = dom.descricao().value.trim();
@@ -647,19 +664,12 @@
 
     if (!desc || !qtd || !unit) return;
 
-    const tbody = dom.tabelaBody();
-    const row = tbody.insertRow();
-    for (let i = 0; i < 7; i++) row.insertCell(i);
-
-    setRowValues(row, { descTxt: desc, qtd, unit, desconto });
-    attachRemoveButton(row);
+    addItem({ desc, qtd, unit, desconto });
 
     dom.descricao().value = "";
     dom.quantidade().value = "";
     dom.valorUnitario().value = "";
     dom.descontoServico().value = 0;
-
-    recalcAndRender();
   }
 
   // =========================
@@ -709,10 +719,18 @@
     });
   }
 
-  function getTableBodyForPdf() {
-    return $$("#tabela tbody tr").map(tr =>
-      Array.from(tr.querySelectorAll("td")).slice(0, 6).map(td => td.innerText)
-    );
+  function getBodyForPdf() {
+    return state.items.map((it) => {
+      const { total, liquido } = calcItem(it);
+      return [
+        it.desc,
+        String(it.qtd),
+        toFixed2(it.unit),
+        toFixed2(total),
+        toFixed2(it.desconto),
+        toFixed2(liquido),
+      ];
+    });
   }
 
   async function gerarPdf() {
@@ -778,7 +796,7 @@
     doc.autoTable({
       startY: y,
       head: [["Descrição", "Qtd", "Unit", "Total", "Desc", "Líquido"]],
-      body: getTableBodyForPdf(),
+      body: getBodyForPdf(),
       theme: "plain",
       styles: { fontSize: 10, cellPadding: 3 },
       didDrawCell: function (data) {
@@ -911,10 +929,7 @@
     bindEvents();
     initMobileAddToggle();
     initPWA();
-
-    window.addEventListener("load", () => {
-      try { recalcAndRender(); } catch (e) {}
-    });
+    recalcAndRender();
   }
 
   init();
