@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>RE Climatização - Orçamento</title>
+<title>Proposta Comercial</title>
 <!-- PWA -->
 <link href="manifest.webmanifest" rel="manifest"/>
 <meta content="#0077cc" name="theme-color"/>
@@ -16,7 +16,126 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <style>
-    body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
+    
+    /* ===== Premium look ===== */
+    :root{
+      --bg:#f6f8fc;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#e2e8f0;
+      --brand:#0ea5e9;
+      --brand2:#22c55e;
+      --shadow:0 10px 30px rgba(2,8,23,.08);
+      --radius:18px;
+    }
+    body{
+      background:var(--bg);
+      color:var(--text);
+    }
+    .container{
+      max-width:980px;
+      margin:0 auto;
+      padding:14px;
+    }
+    h1{
+      font-size:24px;
+      letter-spacing:-.02em;
+      margin:6px 0 14px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    .section-title{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:900;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+      font-size:12px;
+      color:var(--muted);
+      margin:0 0 12px;
+    }
+    .badge-dot{
+      width:10px;height:10px;border-radius:999px;
+      background:var(--brand);
+      box-shadow:0 0 0 4px rgba(14,165,233,.18);
+    }
+    .btn-primary{
+      background:linear-gradient(135deg, var(--brand), #2563eb);
+      border:none;
+      color:#fff;
+      font-weight:900;
+      border-radius:16px;
+      padding:14px 16px;
+      box-shadow:0 14px 28px rgba(37,99,235,.18);
+    }
+    .btn-secondary{
+      background:#f1f5f9;
+      border:1px solid var(--line);
+      color:var(--text);
+      font-weight:800;
+      border-radius:16px;
+      padding:12px 14px;
+    }
+    .btn-icon{
+      width:44px;height:44px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:#f8fafc;
+      display:grid;
+      place-items:center;
+      font-size:18px;
+    }
+    input, textarea, select{
+      border:1px solid var(--line) !important;
+      border-radius:16px !important;
+      background:#fbfdff !important;
+      box-shadow: inset 0 1px 0 rgba(2,8,23,.03);
+    }
+    input:focus, textarea:focus, select:focus{
+      outline:none;
+      border-color:rgba(14,165,233,.55) !important;
+      box-shadow:0 0 0 4px rgba(14,165,233,.14);
+    }
+    .field-label{
+      color:var(--muted);
+    }
+    .btn-dashed{
+      border-color:#cbd5e1;
+      background: #fff;
+    }
+    #servicosProntosBlock{
+      padding:12px;
+      border:1px dashed #cbd5e1;
+      border-radius:16px;
+      background:#ffffff;
+      margin:10px 0 14px;
+    }
+    #servicosProntosBlock .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    #servicosProntosBlock select{
+      flex:1;
+      height:52px;
+      font-weight:800;
+    }
+    #servicosProntosBlock button{
+      white-space:nowrap;
+    }
+    @media (max-width:768px){
+      h1{ font-size:20px; }
+      .container{ padding:10px; }
+      .btn-primary{ width:100%; }
+    }
+
+body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
     .container{ padding:15px; max-width:700px; margin:auto; }
     .card{ background:white; padding:15px; border-radius:12px; margin-bottom:15px; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
     h2{ margin:0 0 10px 0; color:#0077cc; }
@@ -106,7 +225,7 @@
     }
     .item-card .meta b{ color:#111827; }
     /* Removido: Serviços prontos (substituído por "ADICIONAR ITEM") */
-    #servicosProntosBlock{ display:none; }
+    #servicosProntosBlock{ display:block; }
     .field-label{
       display:block;
       font-size:12px;
@@ -220,11 +339,11 @@
 <textarea id="observacoes"></textarea>
 </div>
 <div class="card">
-<h2>Serviços</h2>
+<div class="section-title"><span class="badge-dot"></span>Serviços</div>
 <!-- ✅ Serviços pré-configurados -->
 <div id="servicosProntosBlock"><label>Serviços prontos</label>
 <select id="servicoPronto"></select>
-<button class="secondary" id="btnAplicarServico" type="button">Aplicar serviço selecionado</button></div>
+<button class="btn-secondary" id="btnAplicarServico" type="button">Aplicar serviço selecionado</button></div>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;"/>
 <button class="btn-dashed" id="btnToggleAdd" type="button"><span class="plus">+</span>ADICIONAR ITEM</button>
 <div id="addForm"><label class="field-label">Descrição</label>
@@ -246,7 +365,7 @@
   </div>
 </div>
 
-<button id="btnAddServico" type="button">Adicionar Serviço</button>
+<button id="btnAddServico" type="button" class="btn-secondary">Adicionar Serviço</button>
 </div><!-- /addForm -->
 <div class="itens-cards" id="itensCards"></div>
 <div class="table-wrap"><table id="tabela">
@@ -269,7 +388,7 @@
 <button class="secondary" id="btnWhatsAppFallback" type="button">Abrir WhatsApp (mensagem)</button>
 </div>
 </div>
-<button id="btnGerarPDF" type="button">GERAR ORÇAMENTO</button><div class="bottom-spacer"></div>
+<button id="btnGerarPDF" type="button" class="btn-primary">GERAR ORÇAMENTO</button><div class="bottom-spacer"></div>
 </div>
 <script>
     // ✅ EDITE AQUI SUA LISTA DE SERVIÇOS PRONTOS
@@ -556,6 +675,30 @@ function loadImageAsDataURL(src){
       btn.type = "button";
       btn.innerText = "Remover";
       btn.addEventListener("click", () => { row.remove(); recalcularTotal(); renderItensCards(); });
+
+    // Serviços prontos: ao aplicar, preenche o formulário de adicionar item
+    document.getElementById("btnAplicarServico")?.addEventListener("click", () => {
+      const sel = document.getElementById("servicoPronto");
+      const idx = parseInt(sel?.value ?? "0", 10);
+      const s = SERVICOS_PRE?.[idx];
+      if(!s) return;
+
+      const descEl = document.getElementById("descricao");
+      const qtdEl  = document.getElementById("quantidade");
+      const unitEl = document.getElementById("valorUnitario");
+
+      if(descEl) descEl.value = (s.desc || s.nome || "").toString();
+      if(qtdEl)  qtdEl.value  = String(s.qtd ?? 1);
+      if(unitEl) unitEl.value = String(s.unit ?? 0);
+
+      // abre o formulário no mobile
+      const form = document.getElementById("addForm");
+      if(form && window.matchMedia("(max-width: 768px)").matches){
+        form.classList.add("open");
+        try{ form.scrollIntoView({behavior:"smooth", block:"start"}); }catch(e){}
+      }
+    });
+
       actionCell.appendChild(btn);
 
       recalcularTotal();
@@ -749,28 +892,7 @@ function loadImageAsDataURL(src){
         y += 6;
       }
 
-      doc.setFont("helvetica","normal");
-      doc.setFontSize(10);
-      doc.setTextColor(90,90,90);
-      doc.text("Data: " + data, margin, y);
-      y += 18;
-
-      doc.setDrawColor(160,160,160);
-      doc.setLineWidth(0.6);
-      doc.line(55, y, 155, y);
-      y += 6;
-
-      doc.setTextColor(90,90,90);
-      doc.text("Assinatura do cliente", 105, y, { align: "center" });
-
-      lastPdfFilename = "Orcamento_" + ((cliente || "Cliente").replace(/[\\/:*?"<>|]/g, "")) + ".pdf";
-      lastPdfBlob = doc.output("blob");
-
-      doc.save(lastPdfFilename);
-      document.getElementById("shareArea").style.display = "block";
-    });
-
-    // PWA: registra service worker
+      doc.setFont("helveregistra service worker
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").catch(() => {});
