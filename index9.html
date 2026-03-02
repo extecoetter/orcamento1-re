@@ -190,12 +190,71 @@
       }
       .bottom-spacer{ height:80px; }
     }
+/* ===== Title pill (top) ===== */
+.title-pill{
+  display:inline-block;
+  background:#0077cc;
+  color:#fff;
+  font-weight:900;
+  padding:12px 14px;
+  border-radius:14px;
+  letter-spacing:0.02em;
+  margin-bottom:10px;
+}
+
+/* ===== Tabs (Serviços) ===== */
+.tabs{
+  display:flex;
+  gap:10px;
+  margin:6px 0 12px 0;
+}
+.tab-btn{
+  flex:1;
+  border:none;
+  border-radius:14px;
+  padding:12px 10px;
+  font-weight:900;
+  background:#e2e8f0;
+  color:#1f2937;
+  cursor:pointer;
+}
+.tab-btn.active{
+  background:#0077cc;
+  color:#fff;
+}
+.tab-pane{ display:none; }
+.tab-pane.active{ display:block; }
+
+/* ===== Currency input mask (form) ===== */
+.currency-wrap{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:1px solid #d5dbe3;
+  border-radius:12px;
+  padding:0 12px;
+  height:52px;
+  background:#fff;
+}
+.currency-wrap .prefix{
+  color:#6b7280;
+  font-weight:900;
+}
+.currency-wrap input{
+  margin:0;
+  border:none;
+  outline:none;
+  padding:0;
+  height:44px;
+  font-size:18px;
+  font-weight:900;
+}
 </style>
 </head>
 <body>
 <div class="container">
 <div class="card">
-<h2>RE Climatização</h2>
+<div class="title-pill">Proposta Comercial</div>
 <label>Cliente</label>
 <input id="cliente" type="text"/>
 <div class="row">
@@ -221,10 +280,21 @@
 </div>
 <div class="card">
 <h2>Serviços</h2>
-<!-- ✅ Serviços pré-configurados -->
-<div id="servicosProntosBlock"><label>Serviços prontos</label>
-<select id="servicoPronto"></select>
-<button class="secondary" id="btnAplicarServico" type="button">Aplicar serviço selecionado</button></div>
+<div class="tabs">
+  <button type="button" class="tab-btn active" data-tab="tab-add">Adicionar</button>
+  <button type="button" class="tab-btn" data-tab="tab-prontos">Serviços prontos</button>
+</div>
+
+<div id="tab-add" class="tab-pane active">
+  <p class="muted" style="margin:8px 0 12px 0;">Adicione um item manualmente.</p>
+</div>
+
+<div id="tab-prontos" class="tab-pane">
+  <label class="field-label">Serviços prontos</label>
+  <select id="servicoPronto" class="item-select"></select>
+  <button class="secondary" id="btnAplicarServico" type="button" style="margin-top:10px;">Aplicar no formulário</button>
+  <p class="muted" style="margin:10px 0 0 0;">Dica: ao aplicar, a descrição, quantidade e valor unitário são preenchidos automaticamente.</p>
+</div>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;"/>
 <button class="btn-dashed" id="btnToggleAdd" type="button"><span class="plus">+</span>ADICIONAR ITEM</button>
 <div id="addForm"><label class="field-label">Descrição</label>
@@ -238,11 +308,11 @@
   </div>
   <div>
     <label class="field-label">Valor unitário</label>
-    <input id="valorUnitario" placeholder="Valor Unitário" type="number"/>
+    <div class="currency-wrap"><span class="prefix">R$</span><input id="valorUnitario" type="text" inputmode="numeric" autocomplete="off" /></div>
   </div>
   <div>
     <label class="field-label">Desconto</label>
-    <input id="descontoServico" placeholder="Desconto R$" type="number" value="0"/>
+    <div class="currency-wrap"><span class="prefix">R$</span><input id="descontoServico" type="text" inputmode="numeric" autocomplete="off" /></div>
   </div>
 </div>
 
@@ -411,7 +481,62 @@
     return String(name || "Cliente").replace(/[\\/:*?"<>|]/g, "").trim() || "Cliente";
   }
 
-  function isMobile() {
+    // ===== Currency mask (digita da direita pra esquerda) =====
+  function formatBRLCentsFromDigits(digits) {
+    const d = (digits || "").replace(/\D+/g, "");
+    const n = d ? parseInt(d, 10) : 0; // centavos
+    const value = n / 100;
+    try {
+      return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } catch (e) {
+      return value.toFixed(2).replace(".", ",");
+    }
+  }
+
+  function attachCurrencyMask(inputEl, { defaultValue = "0,00" } = {}) {
+    if (!inputEl) return;
+
+    function setFromDigits(d) {
+      inputEl.value = formatBRLCentsFromDigits(d);
+    }
+
+    function getDigits() {
+      return String(inputEl.value || "").replace(/\D+/g, "");
+    }
+
+    if (!inputEl.value) inputEl.value = defaultValue;
+
+    inputEl.addEventListener("focus", () => {
+      if (!inputEl.value) inputEl.value = defaultValue;
+      try {
+        const len = inputEl.value.length;
+        inputEl.setSelectionRange(len, len);
+      } catch (e) {}
+    });
+
+    inputEl.addEventListener("input", () => {
+      const digits = getDigits();
+      setFromDigits(digits);
+      try {
+        const len = inputEl.value.length;
+        inputEl.setSelectionRange(len, len);
+      } catch (e) {}
+    });
+
+    inputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        const digits = getDigits();
+        setFromDigits(digits.slice(0, -1));
+        return;
+      }
+      if (e.key.length === 1 && !/[0-9]/.test(e.key)) {
+        if (e.key !== "," && e.key !== ".") e.preventDefault();
+      }
+    });
+  }
+
+function isMobile() {
     return window.matchMedia(`(max-width: ${CONFIG.MOBILE_BREAKPOINT}px)`).matches;
   }
 
@@ -648,9 +773,9 @@
     if (!s || !s.desc) return;
 
     dom.descricao().value = s.desc;
-    dom.valorUnitario().value = (s.unit ?? "");
+    dom.valorUnitario().value = (typeof s.unit === "number" ? s.unit.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00");
     dom.quantidade().value = (s.qtd ?? 1);
-    dom.descontoServico().value = 0;
+    dom.descontoServico().value = "0,00";
   }
 
   // =========================
@@ -859,14 +984,7 @@
     doc.setTextColor(90, 90, 90);
     doc.text("Data: " + data, margin, y);
     y += 18;
-
-    doc.setDrawColor(160, 160, 160);
-    doc.setLineWidth(0.6);
-    doc.line(55, y, 155, y);
-    y += 6;
-
-    doc.setTextColor(90, 90, 90);
-    doc.text("Assinatura do cliente", 105, y, { align: "center" });
+      // Assinatura removida (pedido do usuário)
 
     state.lastPdfFilename = CONFIG.FILENAME_PREFIX + safeFilename(cliente) + ".pdf";
     state.lastPdfBlob = doc.output("blob");
@@ -901,7 +1019,31 @@
     });
   }
 
+    // =========================
+  // Tabs (Serviços)
   // =========================
+  function initTabs() {
+    const btns = $$(".tab-btn");
+    if (!btns.length) return;
+
+    const panes = $$(".tab-pane");
+    function activate(id) {
+      btns.forEach(b => b.classList.toggle("active", b.dataset.tab === id));
+      panes.forEach(p => p.classList.toggle("active", p.id === id));
+
+      // quando entrar em "serviços prontos", abre o formulário para receber os dados
+      if (id === "tab-prontos") {
+        const form = dom.addForm();
+        if (form) form.classList.add("open");
+      }
+    }
+
+    btns.forEach((b) => b.addEventListener("click", () => activate(b.dataset.tab)));
+
+    activate("tab-add");
+  }
+
+// =========================
   // PWA
   // =========================
   function initPWA() {
@@ -927,6 +1069,12 @@
   function init() {
     popularServicosProntos();
     bindEvents();
+
+    // Máscara de moeda no formulário
+    attachCurrencyMask(dom.valorUnitario(), { defaultValue: "0,00" });
+    attachCurrencyMask(dom.descontoServico(), { defaultValue: "0,00" });
+
+    initTabs();
     initMobileAddToggle();
     initPWA();
     recalcAndRender();
