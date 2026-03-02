@@ -292,7 +292,7 @@
 <div id="tab-prontos" class="tab-pane">
   <label class="field-label">Serviços prontos</label>
   <select id="servicoPronto" class="item-select"></select>
-  <button class="secondary" id="btnAplicarServico" type="button" style="margin-top:10px;">Adicionar serviço</button>
+  <button class="secondary" id="btnAplicarServico" type="button" style="margin-top:10px;">Aplicar no formulário</button>
   <p class="muted" style="margin:10px 0 0 0;">Dica: ao aplicar, a descrição, quantidade e valor unitário são preenchidos automaticamente.</p>
 </div>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;"/>
@@ -444,7 +444,7 @@
   function parseNum(value) {
     // Aceita: number, "12.34", "12,34", "1.234,56", "1,234.56"
     if (typeof value === "number") return value;
-    const s = String((value === null || value === undefined) ? "" : value).trim();
+    const s = String(value ?? "").trim();
     if (!s) return 0;
 
     let x = s.replace(/\s+/g, "");
@@ -493,7 +493,7 @@
     }
   }
 
-  function attachCurrencyMask(inputEl, opts) {
+  function attachCurrencyMask(inputEl, { defaultValue = "0,00" } = {}) {
     if (!inputEl) return;
 
     function setFromDigits(d) {
@@ -504,14 +504,10 @@
       return String(inputEl.value || "").replace(/\D+/g, "");
     }
 
-    var defaultValue = (opts && opts.defaultValue) ? opts.defaultValue : "0,00";
-
     if (!inputEl.value) inputEl.value = defaultValue;
 
     inputEl.addEventListener("focus", () => {
-      var defaultValue = (opts && opts.defaultValue) ? opts.defaultValue : "0,00";
-
-    if (!inputEl.value) inputEl.value = defaultValue;
+      if (!inputEl.value) inputEl.value = defaultValue;
       try {
         const len = inputEl.value.length;
         inputEl.setSelectionRange(len, len);
@@ -736,7 +732,7 @@ function isMobile() {
           desc: s.desc || s.nome,
           unit: Number(s.unit || 0),
           // mantém qtd atual se existir, senão usa o padrão do serviço
-          qtd: clampMin(it.qtd || ((s.qtd !== undefined && s.qtd !== null) ? s.qtd : 1), 1),
+          qtd: clampMin(it.qtd || (s.qtd ?? 1), 1),
         });
       });
 
@@ -776,28 +772,11 @@ function isMobile() {
     const s = SERVICOS_PRE[idx];
     if (!s || !s.desc) return;
 
-    // 1) Preenche o formulário (se existir)
-    if (dom.descricao()) dom.descricao().value = s.desc;
-    if (dom.valorUnitario()) dom.valorUnitario().value =
-      (typeof s.unit === "number"
-        ? s.unit.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-        : "0,00");
-    if (dom.quantidade()) dom.quantidade().value = ((s.qtd !== undefined && s.qtd !== null) ? s.qtd : 1);
-    if (dom.descontoServico()) dom.descontoServico().value = "0,00";
-
-    // 2) Adiciona imediatamente (não precisa clicar em "Adicionar Item")
-    addItem({
-      desc: s.desc,
-      qtd: ((s.qtd !== undefined && s.qtd !== null) ? s.qtd : 1),
-      unit: Number(s.unit || 0),
-      desconto: 0
-    });
-
-    // 3) Garante formulário aberto no mobile (pra ajustes rápidos)
-    const form = dom.addForm();
-    if (form) form.classList.add("open");
+    dom.descricao().value = s.desc;
+    dom.valorUnitario().value = (typeof s.unit === "number" ? s.unit.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00");
+    dom.quantidade().value = (s.qtd ?? 1);
+    dom.descontoServico().value = "0,00";
   }
-
 
   // =========================
   // Adicionar item (form)
@@ -1014,52 +993,57 @@ function isMobile() {
     dom.shareArea().style.display = "block";
   }
 
-  
   // =========================
+  // Mobile UX
+  // =========================
+  function initMobileAddToggle() {
+    const btn = dom.btnToggleAdd();
+    const form = dom.addForm();
+    if (!btn || !form) return;
+
+    function sync() {
+      if (isMobile()) form.classList.remove("open");
+      else form.classList.add("open");
+    }
+
+    sync();
+    window.addEventListener("resize", sync);
+
+    btn.addEventListener("click", () => {
+      form.classList.toggle("open");
+      if (form.classList.contains("open")) {
+        const el = dom.descricao();
+        try { el && el.focus(); } catch (e) {}
+        try { form.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
+      }
+    });
+  }
+
+    // =========================
   // Tabs (Serviços)
   // =========================
   function initTabs() {
-    var btns = $$(".tab-btn");
-    if (!btns || !btns.length) return;
+    const btns = $$(".tab-btn");
+    if (!btns.length) return;
 
-    var panes = $$(".tab-pane");
-
+    const panes = $$(".tab-pane");
     function activate(id) {
-      btns.forEach(function (b) {
-        b.classList.toggle("active", b.dataset.tab === id);
-      });
-      panes.forEach(function (p) {
-        p.classList.toggle("active", p.id === id);
-      });
+      btns.forEach(b => b.classList.toggle("active", b.dataset.tab === id));
+      panes.forEach(p => p.classList.toggle("active", p.id === id));
 
-      // quando entrar em "serviços prontos", abre o formulário para ajustes rápidos
+      // quando entrar em "serviços prontos", abre o formulário para receber os dados
       if (id === "tab-prontos") {
-        var form = dom.addForm();
+        const form = dom.addForm();
         if (form) form.classList.add("open");
       }
     }
 
-    btns.forEach(function (b) {
-      b.addEventListener("click", function () {
-        activate(b.dataset.tab);
-      });
-    });
+    btns.forEach((b) => b.addEventListener("click", () => activate(b.dataset.tab)));
 
     activate("tab-add");
   }
 
 // =========================
-  // Mobile UX
-  // =========================
-  function initMobileAddToggle() {
-    var form = dom.addForm();
-    if (!form) return;
-    if (!isMobile()) form.classList.add("open");
-  }
-    });
-  }
-
-  // =========================
   // PWA
   // =========================
   function initPWA() {
@@ -1073,39 +1057,14 @@ function isMobile() {
   // Init
   // =========================
   function bindEvents() {
-    var el;
+    dom.btnAddServico()?.addEventListener("click", addServicoFromForm);
+    dom.btnShare()?.addEventListener("click", sharePdf);
+    dom.btnWhatsAppFallback()?.addEventListener("click", openWhatsAppFallback);
+    dom.btnGerarPDF()?.addEventListener("click", gerarPdf);
 
-    el = dom.btnAddServico();
-    if (el) el.addEventListener("click", addServicoFromForm);
-
-    el = dom.btnShare();
-    if (el) el.addEventListener("click", sharePdf);
-
-    el = dom.btnWhatsAppFallback();
-    if (el) el.addEventListener("click", openWhatsAppFallback);
-
-    el = dom.btnGerarPDF();
-    if (el) el.addEventListener("click", gerarPdf);
-
-    el = dom.btnAplicarServico();
-    if (el) el.addEventListener("click", aplicarServicoSelecionado);
-
-    el = dom.servicoPronto();
-    if (el) el.addEventListener("change", aplicarServicoSelecionado);
-
-    el = dom.btnToggleAdd();
-    if (el) el.addEventListener("click", function () {
-      var form = dom.addForm();
-      if (!form) return;
-      form.classList.toggle("open");
-      if (form.classList.contains("open")) {
-        var d = dom.descricao();
-        try { if (d) d.focus(); } catch (e) {}
-        try { form.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
-      }
-    });
+    dom.btnAplicarServico()?.addEventListener("click", aplicarServicoSelecionado);
+    dom.servicoPronto()?.addEventListener("change", aplicarServicoSelecionado);
   }
-
 
   function init() {
     popularServicosProntos();
