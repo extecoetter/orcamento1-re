@@ -13,9 +13,8 @@
 <meta content="default" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="RE Orçamentos" name="apple-mobile-web-app-title"/>
 <link href="icons/icon-192.png" rel="apple-touch-icon"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-function formatCurrencyInputs(){
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+    function formatCurrencyInputs(){
       const unitEl = document.getElementById("valorUnitario");
       const descEl = document.getElementById("descontoServico");
       [unitEl, descEl].forEach((el) => {
@@ -361,6 +360,9 @@ body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
       }
       .bottom-spacer{ height:80px; }
     }
+</style>
+<style>
+#debugInit{display:none;position:fixed;left:10px;bottom:10px;background:#111827;color:#fff;padding:8px 10px;border-radius:12px;font:12px/1.2 system-ui;z-index:9999;opacity:.85}
 </style>
 </head>
 <body>
@@ -971,6 +973,10 @@ document.getElementById("btnAplicarServico").addEventListener("click", aplicarSe
   
 
     window.addEventListener('load', () => { try{ renderItensCards(); }catch(e){} });
+</script>
+<div id="debugInit">JS carregado ✅</div>
+<script>
+try{window.__APP_INIT_OK=true;document.getElementById('debugInit').style.display='block';setTimeout(()=>{document.getElementById('debugInit').style.display='none';},1500);}catch(e){}
 </script>
 </body>
 </html>
