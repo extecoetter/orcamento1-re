@@ -10,130 +10,15 @@
 <meta content="#0077cc" name="theme-color"/>
 <!-- iOS (Safari) -->
 <meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
 <meta content="default" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="RE Orçamentos" name="apple-mobile-web-app-title"/>
 <link href="icons/icon-192.png" rel="apple-touch-icon"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-function formatCurrencyInputs(){
-      const unitEl = document.getElementById("valorUnitario");
-      const descEl = document.getElementById("descontoServico");
-      [unitEl, descEl].forEach((el) => {
-        if(!el) return;
-        el.addEventListener("blur", () => {
-          el.value = formatMoneyBR(parseMoneyBR(el.value));
-        });
-      });
-    }
-    formatCurrencyInputs();
-
-
-    // ===== UX: Serviços prontos + Adicionar item (mobile/desktop) =====
-    (function(){
-      const selSrv = document.getElementById("servicoPronto");
-      const btnApply = document.getElementById("btnAplicarServico");
-      const btnAdd = document.getElementById("btnToggleAdd");
-      const form = document.getElementById("addForm");
-
-      function clearForm(){
-        const descEl = document.getElementById("descricao");
-        const qtdEl  = document.getElementById("quantidade");
-        const unitEl = document.getElementById("valorUnitario");
-        const desEl  = document.getElementById("descontoServico");
-        if(descEl) descEl.value = "";
-        if(qtdEl)  qtdEl.value  = "";
-        if(unitEl) unitEl.value = "";
-        if(desEl)  desEl.value  = "0,00";
-      }
-
-      function openForm(){
-        if(!form) return;
-        form.classList.add("open");
-        try{ form.scrollIntoView({behavior:"smooth", block:"start"}); }catch(e){}
-      }
-
-      function syncApplyBtn(){
-        if(!selSrv || !btnApply) return;
-        const has = (selSrv.value && selSrv.value !== "0");
-        btnApply.disabled = !has;
-        btnApply.style.opacity = btnApply.disabled ? "0.6" : "1";
-      }
-
-      // Apply serviço -> preenche campos (editável)
-      if(selSrv && btnApply){
-        selSrv.addEventListener("change", syncApplyBtn);
-        syncApplyBtn();
-
-        btnApply.addEventListener("click", () => {
-          const rawVal = selSrv.value || "0";
-          if(rawVal === "0") return;
-
-          // tenta achar no array (por nome/desc). Se não achar, usa o texto do select mesmo.
-          let s = null;
-          if(typeof SERVICOS_PRE !== "undefined" && Array.isArray(SERVICOS_PRE)){
-            s = SERVICOS_PRE.find(x => (x?.nome === rawVal) || (x?.desc === rawVal)) || null;
-          }
-
-          const descEl = document.getElementById("descricao");
-          const qtdEl  = document.getElementById("quantidade");
-          const unitEl = document.getElementById("valorUnitario");
-          const desEl  = document.getElementById("descontoServico");
-
-          if(descEl) descEl.value = (s?.desc || s?.nome || rawVal).toString();
-          if(qtdEl)  qtdEl.value  = String(s?.qtd ?? 1);
-          if(unitEl) unitEl.value = formatMoneyBR(Number(s?.unit ?? 0));
-          if(desEl)  desEl.value  = "0,00";
-
-          openForm();
-        });
-      }
-
-      // Botão "ADICIONAR ITEM" -> abre em branco
-      if(btnAdd && form){
-        function syncFormByViewport(){
-          // Desktop sempre aberto; mobile começa fechado
-          if(window.matchMedia("(max-width: 768px)").matches){
-            form.classList.remove("open");
-          }else{
-            form.classList.add("open");
-          }
-        }
-        syncFormByViewport();
-        window.addEventListener("resize", syncFormByViewport);
-
-        btnAdd.addEventListener("click", () => {
-          // limpa e abre em branco
-          clearForm();
-          if(selSrv) { selSrv.value = "0"; syncApplyBtn(); }
-          openForm();
-          try{
-            const first = document.getElementById("descricao") || document.getElementById("quantidade");
-            first && first.focus();
-          }catch(e){}
-        });
-      }
-    })();
-
-</script>
-</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <style>
     
-    
-    .servicos-prontos-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom:10px;
-    }
-    .servicos-prontos-head .hint{
-      color:var(--muted);
-      font-weight:800;
-      font-size:12px;
-    }
-
-/* ===== Premium look ===== */
+    /* ===== Premium look ===== */
     :root{
       --bg:#f6f8fc;
       --card:#ffffff;
@@ -363,9 +248,6 @@ body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
       .bottom-spacer{ height:80px; }
     }
 </style>
-<style>
-#debugInit{display:none;position:fixed;left:10px;bottom:10px;background:#111827;color:#fff;padding:8px 10px;border-radius:12px;font:12px/1.2 system-ui;z-index:9999;opacity:.85}
-</style>
 </head>
 <body>
 <div class="container">
@@ -397,29 +279,8 @@ body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
 <div class="card">
 <h2>Serviços</h2>
 <!-- ✅ Serviços pré-configurados -->
-<div id="servicosProntosBlock">
-  <div class="servicos-prontos-head">
-    <label>Serviços prontos</label>
-    <span class="hint">Escolha e clique em Aplicar</span>
-  </div>
-  <select id="servicoPronto">
-
-<option value="0">Selecione um serviço...</option>
-<option value="Higienização Split 9.000 a 12.000 BTUs">Higienização Split 9.000 a 12.000 BTUs</option>
-<option value="Higienização Split 18.000 a 24.000 BTUs">Higienização Split 18.000 a 24.000 BTUs</option>
-<option value="Instalação Split até 12.000 BTUs">Instalação Split até 12.000 BTUs</option>
-<option value="Visita Técnica / Diagnóstico">Visita Técnica / Diagnóstico</option>
-<option value="Instalação Multi-Split (por evaporadora)">Instalação Multi-Split (por evaporadora)</option>
-<option value="Desinstalação de Equipamento">Desinstalação de Equipamento</option>
-<option value="Limpeza Química (desmontagem e lavagem)">Limpeza Química (desmontagem e lavagem)</option>
-<option value="Carga de Gás">Carga de Gás</option>
-<option value="Troca de Componente eletrônico">Troca de Componente eletrônico</option>
-<option value="Teste de Estanquidade">Teste de Estanquidade</option>
-<option value="Vácuo no Sistema">Vácuo no Sistema</option>
-<option value="Infra Estrutura">Infra Estrutura</option>
-<option value="Instalação/Manutenção Bomba de Dreno">Instalação/Manutenção Bomba de Dreno</option>
-
-</select>
+<div id="servicosProntosBlock"><label>Serviços prontos</label>
+<select id="servicoPronto"></select>
 <button class="secondary" id="btnAplicarServico" type="button">Aplicar serviço selecionado</button></div>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;"/>
 <button class="btn-dashed" id="btnToggleAdd" type="button"><span class="plus">+</span>ADICIONAR ITEM</button>
@@ -438,7 +299,7 @@ body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
   </div>
   <div>
     <label class="field-label">Desconto</label>
-    <div class="money-input"><span class="prefix">R$</span><input id="descontoServico" placeholder="0,00" type="text" inputmode="decimal" value="0"/></div>
+    <div class="money-input"><span class="prefix">R$</span><input id="descontoServico" placeholder="0,00" type="text" inputmode="decimal" value="0,00"/></div>
   </div>
 </div>
 
@@ -470,28 +331,28 @@ body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
 <script>
     // ✅ EDITE AQUI SUA LISTA DE SERVIÇOS PRONTOS
     // Você pode colocar quantos quiser.
+    
     const SERVICOS_PRE = [
-      { nome: "Selecione um serviço...", desc: "", unit: "", qtd: "" },
+      { nome: "Selecione um serviço...", desc: "", unit: 0, qtd: 1 },
 
       { nome: "Higienização Split 9.000 a 12.000 BTUs", desc: "Higienização de ar-condicionado Split (9.000 a 12.000 BTUs)", unit: 180.00, qtd: 1 },
       { nome: "Higienização Split 18.000 a 24.000 BTUs", desc: "Higienização de ar-condicionado Split (18.000 a 24.000 BTUs)", unit: 200.00, qtd: 1 },
 
-      { nome: "Carga de gás (visita + diagnóstico)", desc: "Visita técnica + diagnóstico para carga de gás", unit: 80.00, qtd: 1 },
-
       { nome: "Instalação Split até 12.000 BTUs", desc: "Instalação de ar-condicionado Split até 12.000 BTUs", unit: 650.00, qtd: 1 },
-      { nome: "Instalação Split 18.000 a 24.000 BTUs", desc: "Instalação de ar-condicionado Split (18.000 a 24.000 BTUs)", unit: 850.00, qtd: 1 }
+      { nome: "Instalação Split 18.000 a 24.000 BTUs", desc: "Instalação de ar-condicionado Split (18.000 a 24.000 BTUs)", unit: 850.00, qtd: 1 },
 
-      { nome: "Instalação Multi-Split (por evaporadora)", desc: "Instalação Multi-Split (por evaporadora)", qtd: 1, unit: 0 },
-      { nome: "Desinstalação de Equipamento", desc: "Desinstalação de Equipamento", qtd: 1, unit: 0 },
-      { nome: "Limpeza Química (desmontagem e lavagem)", desc: "Limpeza Química (desmontagem e lavagem)", qtd: 1, unit: 0 },
-      { nome: "Carga de Gás", desc: "Carga de Gás", qtd: 1, unit: 0 },
-      { nome: "Troca de Componente eletrônico", desc: "Troca de Componente eletrônico", qtd: 1, unit: 0 },
-      { nome: "Teste de Estanquidade", desc: "Teste de Estanquidade", qtd: 1, unit: 0 },
-      { nome: "Vácuo no Sistema", desc: "Vácuo no Sistema", qtd: 1, unit: 0 },
-      { nome: "Visita Técnica / Diagnóstico", desc: "Visita Técnica / Diagnóstico", qtd: 1, unit: 0 },
-      { nome: "Infra Estrutura", desc: "Infra Estrutura", qtd: 1, unit: 0 },
-      { nome: "Instalação/Manutenção Bomba de Dreno", desc: "Instalação/Manutenção Bomba de Dreno", qtd: 1, unit: 0 },
+      { nome: "Instalação Multi-Split (por evaporadora)", desc: "Instalação Multi-Split (por evaporadora)", unit: 0, qtd: 1 },
+      { nome: "Desinstalação de Equipamento", desc: "Desinstalação de Equipamento", unit: 0, qtd: 1 },
+      { nome: "Limpeza Química (desmontagem e lavagem)", desc: "Limpeza Química (desmontagem e lavagem)", unit: 0, qtd: 1 },
+      { nome: "Carga de Gás", desc: "Carga de Gás", unit: 0, qtd: 1 },
+      { nome: "Troca de Componente eletrônico", desc: "Troca de Componente eletrônico", unit: 0, qtd: 1 },
+      { nome: "Teste de Estanquidade", desc: "Teste de Estanquidade", unit: 0, qtd: 1 },
+      { nome: "Vácuo no Sistema", desc: "Vácuo no Sistema", unit: 0, qtd: 1 },
+      { nome: "Visita Técnica / Diagnóstico", desc: "Visita Técnica / Diagnóstico", unit: 0, qtd: 1 },
+      { nome: "Infra Estrutura", desc: "Infra Estrutura", unit: 0, qtd: 1 },
+      { nome: "Instalação/Manutenção Bomba de Dreno", desc: "Instalação/Manutenção Bomba de Dreno", unit: 0, qtd: 1 }
     ];
+
 
     let totalGeral = 0;
     let lastPdfBlob = null;
@@ -500,9 +361,10 @@ body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
     function recalcularTotal(){
       totalGeral = 0;
       document.querySelectorAll("#tabela tbody tr").forEach(tr => {
-        totalGeral += parseFloat(tr.cells[5].innerText) || 0;
+        totalGeral += parseMoneyBR(tr.cells[5].innerText);
       });
-      document.getElementById("total").innerText = totalGeral.toFixed(2);
+      const totalEl = document.getElementById("total");
+      if(totalEl) totalEl.innerText = formatMoneyBR(totalGeral);
     }
 
     
@@ -516,13 +378,13 @@ body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
 
     function parseMoneyBR(v){
       if(v === null || v === undefined) return 0;
-      const s = String(v).replace(/[^\d,.-]/g, "").replace(/\./g,"").replace(",",".");
+      const s = String(v).replace(/[^\d,.-]/g,"").replace(/\./g,"").replace(",",".");
       const n = parseFloat(s);
       return isNaN(n) ? 0 : n;
     }
     function formatMoneyBR(n){
       try{
-        return (Number(n)||0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return (Number(n)||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
       }catch(e){
         return "0,00";
       }
@@ -718,51 +580,78 @@ function loadImageAsDataURL(src){
     function popularServicosProntos(){
       const sel = document.getElementById("servicoPronto");
       if(!sel) return;
-      try{
-        sel.innerHTML = "";
-        SERVICOS_PRE.forEach((s, idx) => {
+      sel.innerHTML = "";
+      SERVICOS_PRE.forEach((s, idx) => {
         const opt = document.createElement("option");
-        opt.value = String(idx);
+        opt.value = idx === 0 ? "0" : s.nome;
         opt.textContent = s.nome;
         sel.appendChild(opt);
       });
-      }catch(e){ /* fallback: mantém opções estáticas */ }
     }
 
     // ✅ Aplica serviço selecionado (preenche os campos)
     function aplicarServicoSelecionado(){
       const sel = document.getElementById("servicoPronto");
-      const idx = parseInt(sel.value, 10);
-      const s = SERVICOS_PRE[idx];
-      if(!s || !s.desc) return;
+      const raw = sel?.value || "0";
+      const btn = document.getElementById("btnAplicarServico");
+      if(btn){
+        btn.disabled = (raw === "0");
+        btn.style.opacity = btn.disabled ? "0.6" : "1";
+      }
+      if(raw === "0") return;
 
-      document.getElementById("descricao").value = s.desc;
-      document.getElementById("valorUnitario").value = (s.unit ?? "");
-      document.getElementById("quantidade").value = (s.qtd ?? 1);
+      const s = SERVICOS_PRE.find(x => x.nome === raw) || null;
 
-      // opcional: zera desconto ao escolher serviço pronto
+      document.getElementById("descricao").value = (s?.desc || raw);
+      document.getElementById("valorUnitario").value = formatMoneyBR(Number(s?.unit ?? 0));
+      document.getElementById("quantidade").value = String(s?.qtd ?? 1);
       document.getElementById("descontoServico").value = "0,00";
+
+      // abre formulário (mobile)
+      const form = document.getElementById("addForm");
+      if(form){
+        form.classList.add("open");
+        try{ form.scrollIntoView({ behavior:"smooth", block:"start" }); }catch(e){}
+      }
     }
 
     // inicializa select
     popularServicosProntos();
 
     
-
-    
+    (function(){
+      const unitEl = document.getElementById("valorUnitario");
+      const desEl  = document.getElementById("descontoServico");
+      [unitEl, desEl].forEach((el)=>{
+        if(!el) return;
+        el.addEventListener("blur", ()=>{ el.value = formatMoneyBR(parseMoneyBR(el.value)); });
+      });
+    })();
 document.getElementById("btnAplicarServico").addEventListener("click", aplicarServicoSelecionado);
-
-    // bônus: ao trocar o select, já aplica automaticamente
-    document.getElementById("servicoPronto").addEventListener("change", aplicarServicoSelecionado);
-
-    // adicionar serviço
+    document.getElementById("servicoPronto").addEventListener("change", () => {
+      const sel=document.getElementById("servicoPronto");
+      const btn=document.getElementById("btnAplicarServico");
+      if(btn){ btn.disabled = ((sel?.value||"0")==="0"); btn.style.opacity = btn.disabled ? "0.6":"1"; }
+    });
+// adicionar serviço
     document.getElementById("btnAddServico").addEventListener("click", function(){
       const desc = document.getElementById("descricao").value.trim();
       const qtd = parseFloat(document.getElementById("quantidade").value);
       const unit = parseMoneyBR(document.getElementById("valorUnitario").value);
-      const desconto = parseMoneyBR(document.getElementById("descontoServico").value) || 0;
+      const desconto = parseMoneyBR(document.getElementById("descontoServico").value);
 
-      if(!desc || isNaN(qtd) || isNaN(unit)) return;
+      if(!desc){
+        alert("Preencha a descrição.");
+        return;
+      }
+      if(isNaN(qtd) || qtd <= 0){
+        alert("Preencha a quantidade.");
+        return;
+      }
+      if(!isFinite(unit) || unit < 0){
+        alert("Preencha o valor unitário.");
+        return;
+      }
 
       const total = qtd * unit;
       const liquido = total - desconto;
@@ -789,14 +678,13 @@ document.getElementById("btnAplicarServico").addEventListener("click", aplicarSe
       recalcularTotal();
       renderItensCards();
 
+      // limpa depois de adicionar
       document.getElementById("descricao").value = "";
       document.getElementById("quantidade").value = "";
       document.getElementById("valorUnitario").value = "";
       document.getElementById("descontoServico").value = "0,00";
     });
-
-    // Mobile: botão "ADICIONAR ITEM" abre/fecha o formulário
-    
+    })();
 // compartilhar
     document.getElementById("btnShare").addEventListener("click", async function(){
       if(!lastPdfBlob){
@@ -918,7 +806,7 @@ document.getElementById("btnAplicarServico").addEventListener("click", aplicarSe
       doc.setFont("helvetica","bold");
       doc.setFontSize(14);
       doc.setTextColor(0,0,0);
-      doc.text("Total Geral: R$ " + totalGeral.toFixed(2), pageW - margin, y, { align: 'right' });
+      doc.text("Total Geral: R$ " + formatMoneyBR(totalGeral), pageW - margin, y, { align: 'right' });
       y += 10;
 
       doc.setFont("helvetica","bold");
@@ -976,100 +864,5 @@ document.getElementById("btnAplicarServico").addEventListener("click", aplicarSe
 
     window.addEventListener('load', () => { try{ renderItensCards(); }catch(e){} });
 </script>
-<div id="debugInit">JS carregado ✅</div>
-<script>
-try{window.__APP_INIT_OK=true;document.getElementById('debugInit').style.display='block';setTimeout(()=>{document.getElementById('debugInit').style.display='none';},1500);}catch(e){}
-</script>
-
-<script>
-/* ===== HOTFIX: Serviços prontos + Adicionar Item (override) ===== */
-(function(){
-  const selSrv = document.getElementById("servicoPronto");
-  const btnApply = document.getElementById("btnAplicarServico");
-  const btnAdd = document.getElementById("btnToggleAdd");
-  const form = document.getElementById("addForm");
-
-  function parseMoneyBR(v){
-    if(v === null || v === undefined) return 0;
-    const s = String(v).replace(/[^\d,.-]/g,"").replace(/\./g,"").replace(",",".");
-    const n = parseFloat(s);
-    return isNaN(n) ? 0 : n;
-  }
-  function formatMoneyBR(n){
-    try{ return (Number(n)||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
-    catch(e){ return "0,00"; }
-  }
-
-  function clearForm(){
-    const descEl = document.getElementById("descricao");
-    const qtdEl  = document.getElementById("quantidade");
-    const unitEl = document.getElementById("valorUnitario");
-    const desEl  = document.getElementById("descontoServico");
-    if(descEl) descEl.value = "";
-    if(qtdEl)  qtdEl.value  = "";
-    if(unitEl) unitEl.value = "";
-    if(desEl)  desEl.value  = "0,00";
-  }
-
-  function openForm(){
-    if(!form) return;
-    form.classList.add("open");
-    try{ form.scrollIntoView({behavior:"smooth", block:"start"}); }catch(e){}
-  }
-
-  function syncApplyBtn(){
-    if(!selSrv || !btnApply) return;
-    const ok = !!(selSrv.value && selSrv.value !== "0");
-    btnApply.disabled = !ok;
-    btnApply.style.opacity = btnApply.disabled ? "0.6" : "1";
-  }
-
-  // Override handlers
-  if(selSrv && btnApply){
-    selSrv.onchange = syncApplyBtn;
-    syncApplyBtn();
-
-    btnApply.onclick = function(){
-      const rawVal = selSrv.value || "0";
-      if(rawVal === "0") return;
-
-      let s = null;
-      if(typeof SERVICOS_PRE !== "undefined" && Array.isArray(SERVICOS_PRE)){
-        s = SERVICOS_PRE.find(x => (x && (x.nome === rawVal || x.desc === rawVal))) || null;
-      }
-
-      const descEl = document.getElementById("descricao");
-      const qtdEl  = document.getElementById("quantidade");
-      const unitEl = document.getElementById("valorUnitario");
-      const desEl  = document.getElementById("descontoServico");
-
-      if(descEl) descEl.value = (s?.desc || s?.nome || rawVal).toString();
-      if(qtdEl)  qtdEl.value  = String(s?.qtd ?? 1);
-      if(unitEl) unitEl.value = formatMoneyBR(Number(s?.unit ?? 0));
-      if(desEl)  desEl.value  = "0,00";
-
-      openForm();
-    };
-  }
-
-  if(btnAdd){
-    btnAdd.onclick = function(){
-      clearForm();
-      if(selSrv){ selSrv.value = "0"; syncApplyBtn(); }
-      openForm();
-      try{ (document.getElementById("descricao")||document.getElementById("quantidade"))?.focus(); }catch(e){}
-    };
-  }
-
-  // Format currency on blur
-  const unitEl = document.getElementById("valorUnitario");
-  const desEl  = document.getElementById("descontoServico");
-  [unitEl, desEl].forEach(el=>{
-    if(!el) return;
-    el.addEventListener("blur", ()=>{ el.value = formatMoneyBR(parseMoneyBR(el.value)); });
-  });
-})();
-</script>
-
 </body>
 </html>
