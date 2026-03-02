@@ -1,24 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RE Climatização - Orçamento</title>
-
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0077cc">
-
-  <!-- iOS (Safari) -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="RE Orçamentos">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<title>RE Climatização - Orçamento</title>
+<!-- PWA -->
+<link href="manifest.webmanifest" rel="manifest"/>
+<meta content="#0077cc" name="theme-color"/>
+<!-- iOS (Safari) -->
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="default" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="RE Orçamentos" name="apple-mobile-web-app-title"/>
+<link href="icons/icon-192.png" rel="apple-touch-icon"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<style>
     body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
     .container{ padding:15px; max-width:700px; margin:auto; }
     .card{ background:white; padding:15px; border-radius:12px; margin-bottom:15px; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
@@ -41,88 +38,240 @@
     .total{ text-align:right; font-weight:bold; font-size:18px; margin-top:10px; }
     .share-area{ display:none; margin-top:10px; }
     .share-area button{ margin-top:10px; }
-  </style>
+  
+
+    /* ===== Mobile upgrade (cards + safe tap targets) ===== */
+    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:12px; }
+    .itens-cards{ display:none; }
+
+    .icon-btn{
+      border:none; background:transparent; width:44px; height:44px; padding:0;
+      display:flex; align-items:center; justify-content:center;
+      border-radius:12px;
+    }
+    .icon-btn:active{ transform:scale(0.98); }
+
+    .qty-stepper{
+      display:flex; align-items:center; justify-content:space-between;
+      border:1px solid #d5dbe3; border-radius:12px; overflow:hidden;
+      height:48px; min-width:140px;
+      background:#f5f7fa;
+    }
+    .qty-stepper button{
+      width:48px; height:48px; border:none; background:transparent;
+      font-size:22px; font-weight:700; color:#1f2937;
+    }
+    .qty-stepper span{
+      flex:1; text-align:center; font-size:18px; font-weight:700;
+      color:#1f2937;
+    }
+
+    .money-input{
+      display:flex; align-items:center; gap:10px;
+      border:1px solid #d5dbe3; border-radius:12px; padding:0 12px;
+      height:48px; background:#fff;
+    }
+    .money-input .prefix{ color:#6b7280; font-weight:700; }
+    .money-input input{
+      margin:0; border:none; padding:0; height:44px;
+      font-size:18px; font-weight:800; outline:none;
+    }
+
+    .item-card{
+      background:#fff;
+      border:1px solid #e6eaf0;
+      border-radius:16px;
+      padding:14px;
+      margin:12px 0;
+      box-shadow:0 6px 16px rgba(0,0,0,0.05);
+    }
+    .item-card .top{
+      display:flex; align-items:center; gap:10px;
+    }
+    .item-card .desc{
+      flex:1;
+      font-size:18px;
+      font-weight:800;
+      color:#1f2937;
+      margin:0;
+      line-height:1.2;
+    }
+    .item-card .row2{
+      display:flex; gap:12px; margin-top:12px; align-items:center;
+    }
+    .item-card .row2 .money-input{ flex:1; }
+    .item-card .meta{
+      margin-top:10px; display:flex; gap:12px; flex-wrap:wrap;
+      color:#6b7280; font-size:13px; font-weight:700;
+    }
+    .item-card .meta b{ color:#111827; }
+    /* Removido: Serviços prontos (substituído por "ADICIONAR ITEM") */
+    #servicosProntosBlock{ display:none; }
+    .field-label{
+      display:block;
+      font-size:12px;
+      font-weight:800;
+      color:#64748b;
+      margin:10px 0 6px;
+      letter-spacing:0.02em;
+      text-transform:uppercase;
+    }
+    .field-grid-3{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 768px){
+      .field-grid-3{ grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+
+
+
+
+    
+    /* ===== Mobile premium controls ===== */
+    .btn-dashed{
+      width:100%;
+      border:2px dashed #cbd5e1;
+      background:transparent;
+      color:#475569;
+      font-weight:800;
+      border-radius:14px;
+      padding:14px;
+    }
+    .btn-dashed .plus{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:26px;height:26px;
+      border-radius:999px;
+      background:#e2e8f0;
+      margin-right:10px;
+      font-weight:900;
+    }
+    .muted{
+      color:#94a3b8;
+      font-weight:700;
+    }
+    .item-select{
+      flex:1;
+      border:1px solid #d5dbe3;
+      border-radius:14px;
+      padding:10px 12px;
+      height:52px;
+      font-size:16px;
+      font-weight:800;
+      background:#f8fafc;
+      margin:0;
+    }
+
+
+@media (max-width: 768px){
+      #addForm{ display:none; }
+      #addForm.open{ display:block; }
+      .container{ padding:12px; }
+      input, textarea, select{ min-height:44px; }
+      button{ min-height:46px; border-radius:14px; }
+      .two-col{ display:block !important; }
+      .two-col > div{ width:100% !important; }
+
+      /* Hide desktop table, show cards */
+      #tabela{ display:none; }
+      .itens-cards{ display:block; }
+
+      /* Sticky bottom main action */
+      #btnGerarPDF{
+        position:sticky;
+        bottom:10px;
+        z-index:20;
+        box-shadow:0 10px 24px rgba(0,0,0,0.18);
+        width:100%;
+      }
+      .bottom-spacer{ height:80px; }
+    }
+</style>
 </head>
-
 <body>
-  <div class="container">
-    <div class="card">
-      <h2>RE Climatização</h2>
+<div class="container">
+<div class="card">
+<h2>RE Climatização</h2>
+<label>Cliente</label>
+<input id="cliente" type="text"/>
+<div class="row">
+<div>
+<label>Telefone</label>
+<input id="telefoneCliente" type="text"/>
+</div>
+<div>
+<label>Forma de Pagamento</label>
+<select id="pagamento">
+<option>Dinheiro</option>
+<option>PIX</option>
+<option>Cartão</option>
+<option>Transferência</option>
+<option>Parcelado</option>
+</select>
+</div>
+</div>
+<label>Endereço</label>
+<input id="enderecoCliente" type="text"/>
+<label>Observações</label>
+<textarea id="observacoes"></textarea>
+</div>
+<div class="card">
+<h2>Serviços</h2>
+<!-- ✅ Serviços pré-configurados -->
+<div id="servicosProntosBlock"><label>Serviços prontos</label>
+<select id="servicoPronto"></select>
+<button class="secondary" id="btnAplicarServico" type="button">Aplicar serviço selecionado</button></div>
+<hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;"/>
+<button class="btn-dashed" id="btnToggleAdd" type="button"><span class="plus">+</span>ADICIONAR ITEM</button>
+<div id="addForm"><label class="field-label">Descrição</label>
 
-      <label>Cliente</label>
-      <input type="text" id="cliente">
+<input id="descricao" placeholder="Descrição" type="text"/>
 
-      <div class="row">
-        <div>
-          <label>Telefone</label>
-          <input type="text" id="telefoneCliente">
-        </div>
-        <div>
-          <label>Forma de Pagamento</label>
-          <select id="pagamento">
-            <option>Dinheiro</option>
-            <option>PIX</option>
-            <option>Cartão</option>
-            <option>Transferência</option>
-            <option>Parcelado</option>
-          </select>
-        </div>
-      </div>
-
-      <label>Endereço</label>
-      <input type="text" id="enderecoCliente">
-
-      <label>Observações</label>
-      <textarea id="observacoes"></textarea>
-    </div>
-
-    <div class="card">
-      <h2>Serviços</h2>
-
-      <!-- ✅ Serviços pré-configurados -->
-      <label>Serviços prontos</label>
-      <select id="servicoPronto"></select>
-      <button type="button" class="secondary" id="btnAplicarServico">Aplicar serviço selecionado</button>
-
-      <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;">
-
-      <input type="text" id="descricao" placeholder="Descrição">
-
-      <div class="row">
-        <input type="number" id="quantidade" placeholder="Qtd">
-        <input type="number" id="valorUnitario" placeholder="Valor Unitário">
-        <input type="number" id="descontoServico" placeholder="Desconto R$" value="0">
-      </div>
-
-      <button type="button" id="btnAddServico">Adicionar Serviço</button>
-
-      <table id="tabela">
-        <thead>
-          <tr>
-            <th>Descrição</th>
-            <th>Qtd</th>
-            <th>Unit</th>
-            <th>Total</th>
-            <th>Desc</th>
-            <th>Líquido</th>
-            <th>Ação</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-
-      <p class="total">Total: R$ <span id="total">0.00</span></p>
-
-      <div class="share-area" id="shareArea">
-        <button type="button" class="secondary" id="btnShare">Compartilhar (WhatsApp)</button>
-        <button type="button" class="secondary" id="btnWhatsAppFallback">Abrir WhatsApp (mensagem)</button>
-      </div>
-    </div>
-
-    <button type="button" id="btnGerarPDF">GERAR ORÇAMENTO</button>
+<div class="field-grid-3">
+  <div>
+    <label class="field-label">Quantidade</label>
+    <input id="quantidade" placeholder="Qtd" type="number"/>
   </div>
+  <div>
+    <label class="field-label">Valor unitário</label>
+    <input id="valorUnitario" placeholder="Valor Unitário" type="number"/>
+  </div>
+  <div>
+    <label class="field-label">Desconto</label>
+    <input id="descontoServico" placeholder="Desconto R$" type="number" value="0"/>
+  </div>
+</div>
 
-  <script>
+<button id="btnAddServico" type="button">Adicionar Serviço</button>
+</div><!-- /addForm -->
+<div class="itens-cards" id="itensCards"></div>
+<div class="table-wrap"><table id="tabela">
+<thead>
+<tr>
+<th>Descrição</th>
+<th>Qtd</th>
+<th>Unit</th>
+<th>Total</th>
+<th>Desc</th>
+<th>Líquido</th>
+<th>Ação</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table></div>
+<p class="total">Total: R$ <span id="total">0.00</span></p>
+<div class="share-area" id="shareArea">
+<button class="secondary" id="btnShare" type="button">Compartilhar (WhatsApp)</button>
+<button class="secondary" id="btnWhatsAppFallback" type="button">Abrir WhatsApp (mensagem)</button>
+</div>
+</div>
+<button id="btnGerarPDF" type="button">GERAR ORÇAMENTO</button><div class="bottom-spacer"></div>
+</div>
+<script>
     // ✅ EDITE AQUI SUA LISTA DE SERVIÇOS PRONTOS
     // Você pode colocar quantos quiser.
     const SERVICOS_PRE = [
@@ -149,7 +298,183 @@
       document.getElementById("total").innerText = totalGeral.toFixed(2);
     }
 
-    function loadImageAsDataURL(src){
+    
+    // ===== Mobile cards (sem quebrar a tabela do desktop) =====
+    function fmtBR(v){
+      try{
+        return Number(v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }catch(e){
+        return (Number(v||0).toFixed(2)).replace(".", ",");
+      }
+    }
+
+    function getRowNumbers(row){
+      const qtd = parseFloat(row.cells[1].innerText) || 0;
+      const unit = parseFloat(row.cells[2].innerText) || 0;
+      const desc = parseFloat(row.cells[4].innerText) || 0;
+      return { qtd, unit, desc };
+    }
+
+    function atualizarLinha(row, qtd, unit, desc){
+      const total = (qtd || 0) * (unit || 0);
+      const liquido = total - (desc || 0);
+      row.cells[1].innerText = qtd;
+      row.cells[2].innerText = (unit || 0).toFixed(2);
+      row.cells[3].innerText = total.toFixed(2);
+      row.cells[4].innerText = (desc || 0).toFixed(2);
+      row.cells[5].innerText = liquido.toFixed(2);
+      recalcularTotal();
+      renderItensCards();
+    }
+
+    
+    function renderItensCards(){
+      const wrap = document.getElementById("itensCards");
+      if(!wrap) return;
+
+      const rows = Array.from(document.querySelectorAll("#tabela tbody tr"));
+      wrap.innerHTML = "";
+
+      rows.forEach((row) => {
+        const { qtd, unit, desc } = getRowNumbers(row);
+        const descTxt = row.cells[0].innerText || "";
+
+        const card = document.createElement("div");
+        card.className = "item-card";
+
+        // Top row: select + trash
+        const top = document.createElement("div");
+        top.className = "top";
+
+        const sel = document.createElement("select");
+        sel.className = "item-select";
+        // option personalizado
+        const optCustom = document.createElement("option");
+        optCustom.value = "-1";
+        optCustom.textContent = descTxt || "Item";
+        sel.appendChild(optCustom);
+
+        // serviços prontos
+        SERVICOS_PRE.forEach((s, idx) => {
+          if(idx === 0) return;
+          const opt = document.createElement("option");
+          opt.value = String(idx);
+          opt.textContent = s.nome;
+          // tenta casar por texto
+          if(descTxt && (descTxt.includes(s.nome) || descTxt === s.desc)) opt.selected = true;
+          sel.appendChild(opt);
+        });
+
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "icon-btn";
+        del.setAttribute("aria-label", "Remover item");
+        del.innerHTML = "🗑️";
+        del.addEventListener("click", () => {
+          row.remove();
+          recalcularTotal();
+          renderItensCards();
+        });
+
+        top.appendChild(sel);
+        top.appendChild(del);
+
+        // Row 2: money + stepper
+        const row2 = document.createElement("div");
+        row2.className = "row2";
+
+        const money = document.createElement("div");
+        money.className = "money-input";
+
+        const prefix = document.createElement("span");
+        prefix.className = "prefix";
+        prefix.textContent = "R$";
+
+        const moneyInput = document.createElement("input");
+        moneyInput.type = "text";
+        moneyInput.inputMode = "decimal";
+        moneyInput.value = fmtBR(unit);
+        moneyInput.addEventListener("change", () => {
+          const v = parseFloat(String(moneyInput.value).replace(/\./g,"").replace(",", "."));
+          const nums = getRowNumbers(row);
+          atualizarLinha(row, nums.qtd, isNaN(v)?0:v, nums.desc);
+        });
+
+        money.appendChild(prefix);
+        money.appendChild(moneyInput);
+
+        const step = document.createElement("div");
+        step.className = "qty-stepper";
+
+        const btnMinus = document.createElement("button");
+        btnMinus.type = "button";
+        btnMinus.textContent = "−";
+        btnMinus.addEventListener("click", () => {
+          const nums = getRowNumbers(row);
+          const next = Math.max(1, nums.qtd - 1);
+          atualizarLinha(row, next, nums.unit, nums.desc);
+        });
+
+        const mid = document.createElement("span");
+        mid.textContent = String(qtd);
+
+        const btnPlus = document.createElement("button");
+        btnPlus.type = "button";
+        btnPlus.textContent = "+";
+        btnPlus.addEventListener("click", () => {
+          const nums = getRowNumbers(row);
+          const next = nums.qtd + 1;
+          atualizarLinha(row, next, nums.unit, nums.desc);
+        });
+
+        step.appendChild(btnMinus);
+        step.appendChild(mid);
+        step.appendChild(btnPlus);
+
+        row2.appendChild(money);
+        row2.appendChild(step);
+
+        // Meta line
+        const meta = document.createElement("div");
+        meta.className = "meta";
+
+        function refreshMeta(){
+          const nums = getRowNumbers(row);
+          meta.innerHTML = `<span>Total: <b>R$ ${fmtBR(row.cells[3].innerText)}</b></span>
+                            <span>Desc: <b>R$ ${fmtBR(nums.desc)}</b></span>
+                            <span>Líquido: <b>R$ ${fmtBR(row.cells[5].innerText)}</b></span>`;
+          mid.textContent = String(nums.qtd);
+          moneyInput.value = fmtBR(nums.unit);
+        }
+        refreshMeta();
+
+        // Change select: apply serviço pronto
+        sel.addEventListener("change", () => {
+          const idx = parseInt(sel.value, 10);
+          if(isNaN(idx) || idx < 1) return;
+          const s = SERVICOS_PRE[idx];
+          if(!s) return;
+          row.cells[0].innerText = s.desc || s.nome;
+          row.cells[0].className = "desc";
+          const nums = getRowNumbers(row);
+          const nextQtd = nums.qtd || (s.qtd ?? 1);
+          atualizarLinha(row, nextQtd, Number(s.unit||0), nums.desc);
+        });
+
+        // Observe changes in the row to keep card synced
+        const obs = new MutationObserver(refreshMeta);
+        obs.observe(row, { childList:true, subtree:true, characterData:true });
+
+        card.appendChild(top);
+        card.appendChild(row2);
+        card.appendChild(meta);
+
+        wrap.appendChild(card);
+      });
+    }
+
+
+function loadImageAsDataURL(src){
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = "anonymous";
@@ -230,16 +555,44 @@
       btn.className = "btn-remove";
       btn.type = "button";
       btn.innerText = "Remover";
-      btn.addEventListener("click", () => { row.remove(); recalcularTotal(); });
+      btn.addEventListener("click", () => { row.remove(); recalcularTotal(); renderItensCards(); });
       actionCell.appendChild(btn);
 
       recalcularTotal();
+      renderItensCards();
 
       document.getElementById("descricao").value = "";
       document.getElementById("quantidade").value = "";
       document.getElementById("valorUnitario").value = "";
       document.getElementById("descontoServico").value = 0;
     });
+
+    // Mobile: botão "ADICIONAR ITEM" abre/fecha o formulário
+    (function(){
+      const btn = document.getElementById("btnToggleAdd");
+      const form = document.getElementById("addForm");
+      if(!btn || !form) return;
+
+      function sync(){
+        if(window.matchMedia("(max-width: 768px)").matches){
+          form.classList.remove("open");
+        }else{
+          form.classList.add("open");
+        }
+      }
+      sync();
+      window.addEventListener("resize", sync);
+
+      btn.addEventListener("click", () => {
+        form.classList.toggle("open");
+        if(form.classList.contains("open")){
+          const el = document.getElementById("servicoPronto") || document.getElementById("descricao");
+          try{ el && el.focus(); }catch(e){}
+          try{ form.scrollIntoView({ behavior:"smooth", block:"start" }); }catch(e){}
+        }
+      });
+    })();
+
 
     // compartilhar
     document.getElementById("btnShare").addEventListener("click", async function(){
@@ -423,6 +776,9 @@
         navigator.serviceWorker.register("./sw.js").catch(() => {});
       });
     }
-  </script>
+  
+
+    window.addEventListener('load', () => { try{ renderItensCards(); }catch(e){} });
+</script>
 </body>
 </html>
