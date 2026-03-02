@@ -978,5 +978,96 @@ document.getElementById("btnAplicarServico").addEventListener("click", aplicarSe
 <script>
 try{window.__APP_INIT_OK=true;document.getElementById('debugInit').style.display='block';setTimeout(()=>{document.getElementById('debugInit').style.display='none';},1500);}catch(e){}
 </script>
+
+<script>
+/* ===== HOTFIX: Serviços prontos + Adicionar Item (override) ===== */
+(function(){
+  const selSrv = document.getElementById("servicoPronto");
+  const btnApply = document.getElementById("btnAplicarServico");
+  const btnAdd = document.getElementById("btnToggleAdd");
+  const form = document.getElementById("addForm");
+
+  function parseMoneyBR(v){
+    if(v === null || v === undefined) return 0;
+    const s = String(v).replace(/[^\d,.-]/g,"").replace(/\./g,"").replace(",",".");
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+  function formatMoneyBR(n){
+    try{ return (Number(n)||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    catch(e){ return "0,00"; }
+  }
+
+  function clearForm(){
+    const descEl = document.getElementById("descricao");
+    const qtdEl  = document.getElementById("quantidade");
+    const unitEl = document.getElementById("valorUnitario");
+    const desEl  = document.getElementById("descontoServico");
+    if(descEl) descEl.value = "";
+    if(qtdEl)  qtdEl.value  = "";
+    if(unitEl) unitEl.value = "";
+    if(desEl)  desEl.value  = "0,00";
+  }
+
+  function openForm(){
+    if(!form) return;
+    form.classList.add("open");
+    try{ form.scrollIntoView({behavior:"smooth", block:"start"}); }catch(e){}
+  }
+
+  function syncApplyBtn(){
+    if(!selSrv || !btnApply) return;
+    const ok = !!(selSrv.value && selSrv.value !== "0");
+    btnApply.disabled = !ok;
+    btnApply.style.opacity = btnApply.disabled ? "0.6" : "1";
+  }
+
+  // Override handlers
+  if(selSrv && btnApply){
+    selSrv.onchange = syncApplyBtn;
+    syncApplyBtn();
+
+    btnApply.onclick = function(){
+      const rawVal = selSrv.value || "0";
+      if(rawVal === "0") return;
+
+      let s = null;
+      if(typeof SERVICOS_PRE !== "undefined" && Array.isArray(SERVICOS_PRE)){
+        s = SERVICOS_PRE.find(x => (x && (x.nome === rawVal || x.desc === rawVal))) || null;
+      }
+
+      const descEl = document.getElementById("descricao");
+      const qtdEl  = document.getElementById("quantidade");
+      const unitEl = document.getElementById("valorUnitario");
+      const desEl  = document.getElementById("descontoServico");
+
+      if(descEl) descEl.value = (s?.desc || s?.nome || rawVal).toString();
+      if(qtdEl)  qtdEl.value  = String(s?.qtd ?? 1);
+      if(unitEl) unitEl.value = formatMoneyBR(Number(s?.unit ?? 0));
+      if(desEl)  desEl.value  = "0,00";
+
+      openForm();
+    };
+  }
+
+  if(btnAdd){
+    btnAdd.onclick = function(){
+      clearForm();
+      if(selSrv){ selSrv.value = "0"; syncApplyBtn(); }
+      openForm();
+      try{ (document.getElementById("descricao")||document.getElementById("quantidade"))?.focus(); }catch(e){}
+    };
+  }
+
+  // Format currency on blur
+  const unitEl = document.getElementById("valorUnitario");
+  const desEl  = document.getElementById("descontoServico");
+  [unitEl, desEl].forEach(el=>{
+    if(!el) return;
+    el.addEventListener("blur", ()=>{ el.value = formatMoneyBR(parseMoneyBR(el.value)); });
+  });
+})();
+</script>
+
 </body>
 </html>
