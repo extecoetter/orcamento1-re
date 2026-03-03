@@ -31,14 +31,10 @@
 
   var SERVICOS_PRE = [
     { nome: "Selecione um serviço...", desc: "", qtd: 1 },
-    { nome: "Instalação Split 9.000 a 12.000 BTU", desc: "Instalação Split 9.000 a 12.000 BTU ", qtd: 1 },
-    { nome: "Instalação Split 18.000 a 24000 BTU", desc: "Instalação Split 18.000 a 24000 BTU", qtd: 1 },
-    { nome: "Limpeza e e higienização", desc: "Limpeza preventiva / higienização de Split", qtd: 1 },
-    { nome: "Visita Técnica p/ Diagnostico", desc: "Visita Técnica p/ Diagnostico", qtd: 1 },
-    { nome: "Teste de estanqueidade com Nitrogenio", desc: "Teste de estanqueidade com Nitrogenio", qtd: 1 },
-    { nome: "Aplicaçao de Vacuo no Sistema", desc: "Aplicaçao de Vacuo no Sistema", qtd: 1 },
-    { nome: "Recarga de gás + teste de pressão", desc: "Recarga de gás + teste de pressão", qtd: 1 },
-    { nome: "Reparo em Componente Eletronico", desc: "Reparo em Componente Eletronico", qtd: 1 }
+    { nome: "Instalação ar condicionado (mão de obra)", desc: "Instalação de ar-condicionado (mão de obra)", qtd: 1 },
+    { nome: "Limpeza preventiva / higienização", desc: "Limpeza preventiva / higienização de ar-condicionado", qtd: 1 },
+    { nome: "Manutenção corretiva (visita técnica)", desc: "Manutenção corretiva (visita técnica)", qtd: 1 },
+    { nome: "Recarga de gás + teste de pressão", desc: "Recarga de gás + teste de pressão", qtd: 1 }
   ];
 
   var dom = {
