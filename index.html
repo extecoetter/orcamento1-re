@@ -249,12 +249,48 @@
   font-size:18px;
   font-weight:900;
 }
+/* ===== Versão (debug) ===== */
+.app-version{
+  margin-top:-6px;
+  color:#6b7280;
+  font-weight:800;
+  font-size:12px;
+}
+
+/* ===== Erro de inicialização (debug) ===== */
+#bootError{
+  display:none;
+  position:fixed;
+  z-index:9999;
+  left:12px;
+  right:12px;
+  bottom:12px;
+  background:#111827;
+  color:#fff;
+  border-radius:14px;
+  padding:12px 14px;
+  font-size:13px;
+  line-height:1.35;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+#bootError b{ font-weight:900; }
+#bootError .small{ opacity:.85; font-size:12px; margin-top:6px; }
+#bootError button{
+  margin-top:10px;
+  border:none;
+  border-radius:10px;
+  padding:10px 12px;
+  font-weight:900;
+  background:#2563eb;
+  color:#fff;
+}
 </style>
 </head>
 <body>
 <div class="container">
 <div class="card">
 <div class="title-pill">Proposta Comercial</div>
+<div class="app-version">Versão: v16-stability</div>
 <label>Cliente</label>
 <input id="cliente" type="text"/>
 <div class="row">
@@ -291,12 +327,12 @@
 
 <div id="tab-prontos" class="tab-pane">
   <label class="field-label">Serviços prontos</label>
-  <select id="servicoPronto" class="item-select"></select>
-  <button class="secondary" id="btnAplicarServico" type="button" style="margin-top:10px;">Adicionar serviço</button>
+  <select id="servicoPronto" class="item-select" data-action="preset_change"></select>
+  <button class="secondary" id="btnAplicarServico" type="button" style="margin-top:10px;" data-action="add_preset">Adicionar serviço</button>
   <p class="muted" style="margin:10px 0 0 0;">Dica: ao aplicar, a descrição, quantidade e valor unitário são preenchidos automaticamente.</p>
 </div>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;"/>
-<button class="btn-dashed" id="btnToggleAdd" type="button">Adicionar Serviço</button>
+<button class="btn-dashed" id="btnToggleAdd" type="button" data-action="add_click"><span class="plus">+</span>ADICIONAR ITEM</button>
 <div id="addForm"><label class="field-label">Descrição</label>
 
 <input id="descricao" placeholder="Descrição" type="text"/>
@@ -316,7 +352,7 @@
   </div>
 </div>
 
-<button id="btnAddServico" type="button" style="display:none;">Adicionar Serviço</button>
+<button id="btnAddServico" type="button">Adicionar Serviço</button>
 </div><!-- /addForm -->
 <div class="itens-cards" id="itensCards"></div>
 <div class="table-wrap"><table id="tabela">
@@ -335,14 +371,13 @@
 </table></div>
 <p class="total">Total: R$ <span id="total">0.00</span></p>
 <div class="share-area" id="shareArea">
-<button class="secondary" id="btnShare" type="button">Compartilhar (WhatsApp)</button>
-<button class="secondary" id="btnWhatsAppFallback" type="button">Abrir WhatsApp (mensagem)</button>
+<button class="secondary" id="btnShare" type="button" data-action="share">Compartilhar (WhatsApp)</button>
+<button class="secondary" id="btnWhatsAppFallback" type="button" data-action="whats">Abrir WhatsApp (mensagem)</button>
 </div>
 </div>
-<button id="btnGerarPDF" type="button">GERAR ORÇAMENTO</button><div class="bottom-spacer"></div>
+<button id="btnGerarPDF" type="button" data-action="pdf">GERAR ORÇAMENTO</button><div class="bottom-spacer"></div>
 </div>
 <script>
-
 /**
  * RE Orçamento (ES5 compatível p/ iPhone antigo)
  * - Fonte única: state.items[]
@@ -354,6 +389,8 @@
   "use strict";
 
   // ===== Config =====
+  var APP_VERSION = "v16-stability";
+
   var CONFIG = {
     CURRENCY_PREFIX: "R$",
     MOBILE_BREAKPOINT: 768,
@@ -425,6 +462,31 @@
     btnToggleAdd: function () { return qs("#btnToggleAdd"); },
     addForm: function () { return qs("#addForm"); }
   };
+
+  // ===== Boot error (debug) =====
+  function showBootError(msg) {
+    try {
+      var box = document.getElementById("bootError");
+      if (!box) return;
+      box.style.display = "block";
+      if (msg) {
+        box.firstElementChild.innerHTML = "<b>Erro no app.</b> " + String(msg);
+      }
+      var btn = document.getElementById("btnBootReload");
+      if (btn) btn.onclick = function () { location.reload(); };
+    } catch (e) {}
+  }
+
+  // ===== Delegação de clique (estabilidade) =====
+  function findActionTarget(el) {
+    while (el && el !== document) {
+      if (el.getAttribute && el.getAttribute("data-action")) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+
+
 
   // ===== Utils =====
   function isMobile() {
@@ -790,22 +852,6 @@
     dom.descontoServico().value = "0,00";
   }
 
-  function onAddButtonClick() {
-    var form = dom.addForm();
-    if (!form) { addServicoFromForm(); return; }
-
-    if (!form.classList.contains("open")) {
-      form.classList.add("open");
-      var el = dom.descricao();
-      try { if (el) el.focus(); } catch (e) {}
-      try { form.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
-      return;
-    }
-
-    addServicoFromForm();
-  }
-
-
   // ===== Tabs =====
   function initTabs() {
     var btns = qsa(".tab-btn");
@@ -1025,43 +1071,75 @@
     var form = dom.addForm();
     if (form && !isMobile()) form.classList.add("open");
   }
+    });
+  }
 
   // ===== PWA =====
   function initPWA() {
     if (!("serviceWorker" in navigator)) return;
+
+    function activateUpdate(reg) {
+      if (!reg || !reg.waiting) return;
+      try { reg.waiting.postMessage({ type: "SKIP_WAITING" }); } catch (e) {}
+    }
+
     window.addEventListener("load", function () {
-      navigator.serviceWorker.register("./sw.js")["catch"](function () {});
+      navigator.serviceWorker.register("./sw.js").then(function (reg) {
+        activateUpdate(reg);
+        reg.addEventListener("updatefound", function () {
+          var nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener("statechange", function () {
+            if (nw.state === "installed") activateUpdate(reg);
+          });
+        });
+      })["catch"](function () {});
+    });
+
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      try { location.reload(); } catch (e) {}
     });
   }
 
+
   // ===== Init =====
   function bindEvents() {
-    var el;
+    document.addEventListener("click", function (e) {
+      var t = e.target;
+      var el = findActionTarget(t);
+      if (!el) return;
 
-    el = dom.btnToggleAdd();
-    if (el) el.addEventListener("click", function () { onAddButtonClick(); });
+      var action = el.getAttribute("data-action");
 
-    el = dom.btnAddServico();
-    if (el) el.addEventListener("click", addServicoFromForm);
+      if (action === "add_click") {
+        var form = dom.addForm();
+        if (!form) return;
 
-    el = dom.btnShare();
-    if (el) el.addEventListener("click", sharePdf);
+        if (!form.classList.contains("open")) {
+          form.classList.add("open");
+          var d = dom.descricao();
+          try { if (d) d.focus(); } catch (err) {}
+          try { form.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (err2) {}
+          return;
+        }
+        addServicoFromForm();
+        return;
+      }
 
-    el = dom.btnWhatsAppFallback();
-    if (el) el.addEventListener("click", openWhatsAppFallback);
+      if (action === "add_preset") { adicionarServicoPronto(); return; }
+      if (action === "pdf") { gerarPdf(); return; }
+      if (action === "share") { sharePdf(); return; }
+      if (action === "whats") { openWhatsAppFallback(); return; }
+    });
 
-    el = dom.btnGerarPDF();
-    if (el) el.addEventListener("click", gerarPdf);
-
-    el = dom.btnAplicarServico();
-    if (el) el.addEventListener("click", adicionarServicoPronto);
-
-    el = dom.servicoPronto();
-    if (el) el.addEventListener("change", function () { });
+    var sel = dom.servicoPronto();
+    if (sel) sel.addEventListener("change", function () { });
   }
 
 
   function init() {
+    try { console.log("APP", APP_VERSION); } catch(e) {}
+
     popularServicosProntos();
     initTabs();
     bindEvents();
@@ -1071,11 +1149,21 @@
     initPWA();
     recalcAndRender();
   }
-
-  init();
+  try {
+    init();
+  } catch (err) {
+    try { console.error(err); } catch(e) {}
+    showBootError(err && err.message ? err.message : "Falha na inicialização");
+  }
 })();
-
 </script>
+
+<div id="bootError">
+  <div><b>Erro no app.</b> Abra o console no PC (F12) para ver detalhes.</div>
+  <div class="small">No iPhone como “app”, remova e adicione novamente após atualizar.</div>
+  <button type="button" id="btnBootReload">Recarregar</button>
+</div>
 </body>
+
 </html>
 
