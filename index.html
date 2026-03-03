@@ -1,17 +1,18 @@
+
 <!DOCTYPE html>
 
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>RE1 Climatização - Orçamento</title>
+<title>Orçamento</title>
 <!-- PWA -->
 <link href="manifest.webmanifest" rel="manifest"/>
 <meta content="#0077cc" name="theme-color"/>
 <!-- iOS (Safari) -->
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="default" name="apple-mobile-web-app-status-bar-style"/>
-<meta content="RE Orçamentos" name="apple-mobile-web-app-title"/>
+<meta content="RE2 Orçamentos" name="apple-mobile-web-app-title"/>
 <link href="icons/icon-192.png" rel="apple-touch-icon"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -290,7 +291,7 @@
 <div class="container">
 <div class="card">
 <div class="title-pill">Proposta Comercial</div>
-<div class="app-version">Versão: v18B-site-sem-pwa</div>
+<div class="app-version">Versão: v19-fix-botoes</div>
 <label>Cliente</label>
 <input id="cliente" type="text"/>
 <div class="row">
@@ -375,8 +376,7 @@
 <button class="secondary" id="btnWhatsAppFallback" type="button">Abrir WhatsApp (mensagem)</button>
 </div>
 </div>
-<button id="btnGerarPDF" type="button">GERAR ORÇAMENTO</button><div class="bottom-spacer"></div>
-</div>
+<button id="btnGerarPDF" type="button">GERAR PDF</button><div class="bottom-spacer"></div>
 <script>
 /**
  * RE Orçamento (ES5 compatível p/ iPhone antigo)
@@ -388,7 +388,7 @@
 (function () {
   "use strict";
 
-  var APP_VERSION = "v18B-site-sem-pwa";
+  var APP_VERSION = "v19-fix-botoes";
 
   // ===== Config =====
   var CONFIG = {
@@ -1091,7 +1091,7 @@
 
   // ===== PWA =====
   function initPWA() {
-    // PWA/Service Worker DESATIVADO durante desenvolvimento (site normal).
+    // DESATIVADO (site normal durante desenvolvimento)
   }
 
   // ===== Init =====
@@ -1112,9 +1112,27 @@
       }
     });
 
-    // Botão interno: adiciona manualmente
+    // Botão interno: adiciona serviço manualmente
     el = dom.btnAddServico();
     if (el) el.addEventListener("click", addServicoFromForm);
+
+    el = dom.btnShare();
+    if (el) el.addEventListener("click", sharePdf);
+
+    el = dom.btnWhatsAppFallback();
+    if (el) el.addEventListener("click", openWhatsAppFallback);
+
+    el = dom.btnGerarPDF();
+    if (el) el.addEventListener("click", gerarPdf);
+
+    el = dom.btnAplicarServico();
+    if (el) el.addEventListener("click", adicionarServicoPronto);
+
+    el = dom.servicoPronto();
+    if (el) el.addEventListener("change", function () { });
+  }
+      addServicoFromForm();
+    });
 
     el = dom.btnShare();
     if (el) el.addEventListener("click", sharePdf);
@@ -1156,7 +1174,7 @@
 
 <div id="bootError">
   <div><b>Erro no app.</b> Abra o console no PC (F12) para ver detalhes.</div>
-  <div class="small">Versão carregada: v18B-site-sem-pwa</div>
+  <div class="small">Versão carregada: v19-fix-botoes</div>
   <button type="button" id="btnBootReload">Recarregar</button>
 </div>
 </body>
