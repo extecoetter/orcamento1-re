@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>RE111 Climatização - Orçamento</title>
+  <title>RE Climatização2 - Orçamento</title>
 
   <meta name="theme-color" content="#0077cc"/>
 
@@ -86,7 +86,7 @@
     <img id="logoPdf" src="icons/icon-192.png" alt="Logo" style="display:none;" />
     <div class="card">
       <h2>Proposta Comercial</h2>
-      <div class="app-version">Versão: <span id="appVersion">v27-exec-check</span> · <span id="jsStatus">JS: carregando…</span></div>
+      <div class="app-version">Versão: <span id="appVersion">v28-syntax-ok</span> · <span id="jsStatus">JS: carregando…</span></div>
 
       <label>Cliente</label>
       <input id="cliente" type="text"/>
@@ -191,7 +191,7 @@
   <script>
     (function(){
       var st = document.getElementById("jsStatus");
-      if (st) st.textContent = "JS: inline OK (v27-exec-check)";
+      if (st) st.textContent = "JS: inline OK (v28-syntax-ok)";
 
       function show(msg){
         try {
@@ -205,8 +205,8 @@
       }
 
       var s = document.createElement("script");
-      s.src = "./app.js?v=v27-exec-check&ts=" + Date.now();
-      s.onload = function(){ if (st) st.textContent = "JS: app.js carregado (v27-exec-check)"; };
+      s.src = "./app.js?v=v28-syntax-ok&ts=" + Date.now();
+      s.onload = function(){ if (st) st.textContent = "JS: app.js carregado (v28-syntax-ok)"; };
       s.onerror = function(){ show("Falha ao carregar app.js. Verifique se o arquivo app.js existe na mesma pasta do index.html e se o nome está exatamente 'app.js' (minúsculo)."); };
       document.body.appendChild(s);
     })();
