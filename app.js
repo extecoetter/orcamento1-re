@@ -38,7 +38,7 @@
     { nome: "Teste de estanqueidade com Nitrogenio", desc: "Teste de estanqueidade com Nitrogenio", qtd: 1 },
     { nome: "Aplicaçao de Vacuo no Sistema", desc: "Aplicaçao de Vacuo no Sistema", qtd: 1 },
     { nome: "Recarga de gás + teste de pressão", desc: "Recarga de gás + teste de pressão", qtd: 1 },
-    { nome: "Reparo em Componente Eletronico", desc: "Reparo em Componente Eletronico", qtd: 1 }
+    { nome: "Reparo em Componente Eletronico", desc: "Reparo em Componente Eletronico", qtd: 1 },
   ];
 
   var dom = {
