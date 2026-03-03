@@ -290,7 +290,7 @@
 <div class="container">
 <div class="card">
 <div class="title-pill">Proposta Comercial</div>
-<div class="app-version">Versão: v17-safe</div>
+<div class="app-version">Versão: v18-delegacao</div>
 <label>Cliente</label>
 <input id="cliente" type="text"/>
 <div class="row">
@@ -327,12 +327,12 @@
 
 <div id="tab-prontos" class="tab-pane">
   <label class="field-label">Serviços prontos</label>
-  <select id="servicoPronto" class="item-select"></select>
-  <button class="secondary" id="btnAplicarServico" type="button" style="margin-top:10px;">Adicionar serviço</button>
+  <select id="servicoPronto" class="item-select" data-action="preset_select"></select>
+  <button class="secondary" id="btnAplicarServico" type="button" style="margin-top:10px;" data-action="add_preset">Adicionar serviço</button>
   <p class="muted" style="margin:10px 0 0 0;">Dica: ao aplicar, a descrição, quantidade e valor unitário são preenchidos automaticamente.</p>
 </div>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;"/>
-<button class="btn-dashed" id="btnToggleAdd" type="button"><span class="plus">+</span>ADICIONAR ITEM</button>
+<button class="btn-dashed" id="btnToggleAdd" type="button" data-action="add_toggle"><span class="plus">+</span>ADICIONAR ITEM</button>
 <div id="addForm"><label class="field-label">Descrição</label>
 
 <input id="descricao" placeholder="Descrição" type="text"/>
@@ -352,7 +352,7 @@
   </div>
 </div>
 
-<button id="btnAddServico" type="button">Adicionar Serviço</button>
+<button id="btnAddServico" type="button" data-action="add_manual">Adicionar Serviço</button>
 </div><!-- /addForm -->
 <div class="itens-cards" id="itensCards"></div>
 <div class="table-wrap"><table id="tabela">
@@ -371,11 +371,11 @@
 </table></div>
 <p class="total">Total: R$ <span id="total">0.00</span></p>
 <div class="share-area" id="shareArea">
-<button class="secondary" id="btnShare" type="button">Compartilhar (WhatsApp)</button>
-<button class="secondary" id="btnWhatsAppFallback" type="button">Abrir WhatsApp (mensagem)</button>
+<button class="secondary" id="btnShare" type="button" data-action="share">Compartilhar (WhatsApp)</button>
+<button class="secondary" id="btnWhatsAppFallback" type="button" data-action="whats">Abrir WhatsApp (mensagem)</button>
 </div>
 </div>
-<button id="btnGerarPDF" type="button">GERAR ORÇAMENTO</button><div class="bottom-spacer"></div>
+<button id="btnGerarPDF" type="button" data-action="pdf">GERAR ORÇAMENTO</button><div class="bottom-spacer"></div>
 </div>
 <script>
 /**
@@ -388,7 +388,7 @@
 (function () {
   "use strict";
 
-  var APP_VERSION = "v17-safe";
+  var APP_VERSION = "v18-delegacao";
 
   // ===== Config =====
   var CONFIG = {
@@ -472,6 +472,17 @@
       if (msg) {
         box.firstElementChild.innerHTML = "<b>Erro no app.</b> " + String(msg);
       }
+
+  // ===== Delegação de eventos (estabilidade) =====
+  function findActionTarget(el) {
+    // Sem closest() para compatibilidade iOS antigo
+    while (el && el !== document) {
+      if (el.getAttribute && el.getAttribute("data-action")) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+
       var btn = document.getElementById("btnBootReload");
       if (btn) btn.onclick = function () { location.reload(); };
     } catch (e) {}
@@ -1061,16 +1072,7 @@
   function initMobileAddToggle() {
     var form = dom.addForm();
     if (form && !isMobile()) form.classList.add("open");
-    var btn = dom.btnToggleAdd();
-    if (!btn || !form) return;
-
-    btn.addEventListener("click", function () {
-      form.classList.toggle("open");
-      if (form.classList.contains("open")) {
-        var el = dom.descricao();
-        try { if (el) el.focus(); } catch (e) {}
-        try { form.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
-      }
+  }
     });
   }
 
@@ -1081,26 +1083,58 @@
 
   // ===== Init =====
   function bindEvents() {
-    var el;
+    // Um único listener: mexeu no layout, não quebra eventos.
+    document.addEventListener("click", function (e) {
+      var t = e.target;
+      var el = findActionTarget(t);
+      if (!el) return;
 
-    el = dom.btnAddServico();
-    if (el) el.addEventListener("click", addServicoFromForm);
+      var action = el.getAttribute("data-action");
 
-    el = dom.btnShare();
-    if (el) el.addEventListener("click", sharePdf);
+      if (action === "add_toggle") {
+        var form = dom.addForm();
+        if (!form) return;
 
-    el = dom.btnWhatsAppFallback();
-    if (el) el.addEventListener("click", openWhatsAppFallback);
+        form.classList.toggle("open");
+        if (form.classList.contains("open")) {
+          var d = dom.descricao();
+          try { if (d) d.focus(); } catch (err) {}
+          try { form.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (err2) {}
+        }
+        return;
+      }
 
-    el = dom.btnGerarPDF();
-    if (el) el.addEventListener("click", gerarPdf);
+      if (action === "add_manual") {
+        addServicoFromForm();
+        return;
+      }
 
-    el = dom.btnAplicarServico();
-    if (el) el.addEventListener("click", adicionarServicoPronto);
+      if (action === "add_preset") {
+        adicionarServicoPronto();
+        return;
+      }
 
-    el = dom.servicoPronto();
-    if (el) el.addEventListener("change", function () { /* só seleção */ });
+      if (action === "pdf") {
+        gerarPdf();
+        return;
+      }
+
+      if (action === "share") {
+        sharePdf();
+        return;
+      }
+
+      if (action === "whats") {
+        openWhatsAppFallback();
+        return;
+      }
+    });
+
+    // Eventos que não são click
+    var sel = dom.servicoPronto();
+    if (sel) sel.addEventListener("change", function () { /* só seleção */ });
   }
+
 
   function init() {
     popularServicosProntos();
@@ -1124,7 +1158,7 @@
 
 <div id="bootError">
   <div><b>Erro no app.</b> Abra o console no PC (F12) para ver detalhes.</div>
-  <div class="small">Versão carregada: v17-safe</div>
+  <div class="small">Versão carregada: v18-delegacao</div>
   <button type="button" id="btnBootReload">Recarregar</button>
 </div>
 </body>
