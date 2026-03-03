@@ -1,749 +1,178 @@
-/**
- * RE Orçamento (ES5 compatível p/ iPhone antigo)
- * - Fonte única: state.items[]
- * - Serviços prontos com abas
- * - Máscara de moeda (digita da direita pra esquerda)
- * - PDF sem assinatura
- */
+// ===== SERVIÇOS (NOVO - ES5) =====
 (function () {
-  "use strict";
+  var itens = []; // fonte única dos serviços
 
-  var APP_VERSION = "v22-split-js";
+  function qs(id){ return document.getElementById(id); }
 
-  window.__APP_BOOT__ = "started";
-  function setJsStatus(t) { try { var s=document.getElementById("jsStatus"); if (s) s.textContent=t; } catch(e) {} }
-  function showBootError(err) {
-    try {
-      var box=document.getElementById("bootError");
-      var txt=document.getElementById("bootErrorText");
-      if (txt) txt.textContent=String(err && err.stack ? err.stack : err);
-      if (box) box.style.display="block";
-      setJsStatus("JS: erro");
-    } catch(e) {}
-  }
-  window.onerror = function(msg, src, line, col, error) {
-    showBootError((error && error.stack) ? error.stack : (msg + " @ " + line + ":" + col));
-    return false;
-  };
-  setJsStatus("JS: script carregado");
+  function onlyDigits(s){ return String(s||"").replace(/\D/g,""); }
 
-  // ===== Config =====
-  var CONFIG = {
-    CURRENCY_PREFIX: "R$",
-    MOBILE_BREAKPOINT: 768,
-    PDF: {
-      margin: 15,
-      lineBlue: [210, 225, 245],
-      boxBlue: [248, 252, 255],
-      logoPath: "logo.png",
-      proposalTitle: "Proposta Comercial"
-    },
-    FILENAME_PREFIX: "Orcamento_"
-  };
-
-  // ✅ EDITE AQUI SUA LISTA DE SERVIÇOS PRONTOS
-  var SERVICOS_PRE = [
-    { nome: "Selecione um serviço...", desc: "", unit: "", qtd: "" },
-
-    { nome: "Higienização Split 9.000 a 12.000 BTUs", desc: "Higienização de ar-condicionado Split (9.000 a 12.000 BTUs)", unit: 180.00, qtd: 1 },
-    { nome: "Higienização Split 18.000 a 24.000 BTUs", desc: "Higienização de ar-condicionado Split (18.000 a 24.000 BTUs)", unit: 200.00, qtd: 1 },
-
-    { nome: "Carga de gás (visita + diagnóstico)", desc: "Visita técnica + diagnóstico para carga de gás", unit: 80.00, qtd: 1 },
-
-    { nome: "Instalação Split até 12.000 BTUs", desc: "Instalação de ar-condicionado Split até 12.000 BTUs", unit: 650.00, qtd: 1 },
-    { nome: "Instalação Split 18.000 a 24.000 BTUs", desc: "Instalação de ar-condicionado Split (18.000 a 24.000 BTUs)", unit: 850.00, qtd: 1 }
-  ];
-
-  // ===== Estado =====
-  var state = {
-    items: [],
-    totalGeral: 0,
-    lastPdfBlob: null,
-    lastPdfFilename: "Orcamento.pdf"
-  };
-
-  // ===== DOM helpers =====
-  function qs(sel, root) {
-    return (root || document).querySelector(sel);
-  }
-  function qsa(sel, root) {
-    return Array.prototype.slice.call((root || document).querySelectorAll(sel));
-  }
-
-  var dom = {
-    cliente: function () { return qs("#cliente"); },
-    telefone: function () { return qs("#telefoneCliente"); },
-    endereco: function () { return qs("#enderecoCliente"); },
-    pagamento: function () { return qs("#pagamento"); },
-    observacoes: function () { return qs("#observacoes"); },
-
-    descricao: function () { return qs("#descricao"); },
-    quantidade: function () { return qs("#quantidade"); },
-    valorUnitario: function () { return qs("#valorUnitario"); },
-    descontoServico: function () { return qs("#descontoServico"); },
-
-    tabelaBody: function () { return qs("#tabela tbody"); },
-    totalSpan: function () { return qs("#total"); },
-    itensCards: function () { return qs("#itensCards"); },
-
-    shareArea: function () { return qs("#shareArea"); },
-    btnShare: function () { return qs("#btnShare"); },
-    btnWhatsAppFallback: function () { return qs("#btnWhatsAppFallback"); },
-
-    btnAddServico: function () { return qs("#btnAddServico"); },
-    btnGerarPDF: function () { return qs("#btnGerarPDF"); },
-
-    servicoPronto: function () { return qs("#servicoPronto"); },
-    btnAplicarServico: function () { return qs("#btnAplicarServico"); },
-
-    btnToggleAdd: function () { return qs("#btnToggleAdd"); },
-    addForm: function () { return qs("#addForm"); }
-  };
-
-  // ===== Utils =====
-  function isMobile() {
-    return window.matchMedia && window.matchMedia("(max-width: " + CONFIG.MOBILE_BREAKPOINT + "px)").matches;
-  }
-
-  function safeFilename(name) {
-    var s = String(name || "Cliente").replace(/[\\/:*?"<>|]/g, "").trim();
-    return s || "Cliente";
-  }
-
-  function parseNum(value) {
-    if (typeof value === "number") return value;
-    var s = String((value === null || value === undefined) ? "" : value).trim();
-    if (!s) return 0;
-
-    var x = s.replace(/\s+/g, "");
-    var hasComma = x.indexOf(",") >= 0;
-    var hasDot = x.indexOf(".") >= 0;
-
-    if (hasComma && hasDot) {
-      var lastComma = x.lastIndexOf(",");
-      var lastDot = x.lastIndexOf(".");
-      var decimalSep = (lastComma > lastDot) ? "," : ".";
-      var thousandSep = (decimalSep === ",") ? "." : ",";
-      x = x.split(thousandSep).join("");
-      x = x.replace(decimalSep, ".");
-    } else if (hasComma && !hasDot) {
-      x = x.replace(",", ".");
+  // máscara moeda "da direita pra esquerda"
+  function formatMoedaFromDigits(digits){
+    digits = onlyDigits(digits);
+    if (!digits) digits = "0";
+    // garante pelo menos 3 chars p/ cortar centavos
+    while (digits.length < 3) digits = "0" + digits;
+    var cent = digits.slice(-2);
+    var intp = digits.slice(0, -2);
+    // separador milhar
+    var out = "";
+    while (intp.length > 3) {
+      out = "." + intp.slice(-3) + out;
+      intp = intp.slice(0, -3);
     }
+    out = intp + out;
+    return out + "," + cent;
+  }
 
-    var n = Number(x);
+  function moedaToNumber(m){
+    m = String(m||"0").replace(/\./g,"").replace(",",".");
+    var n = parseFloat(m);
     return isNaN(n) ? 0 : n;
   }
 
-  function toFixed2(n) {
-    n = Number(n) || 0;
-    return n.toFixed(2);
-  }
-
-  function fmtBR(n) {
-    try {
-      return Number(n || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    } catch (e) {
-      return (Number(n || 0).toFixed(2)).replace(".", ",");
+  function fmtBR(n){
+    var s = (Math.round(n*100)/100).toFixed(2);
+    s = s.replace(".",",");
+    // milhar
+    var parts = s.split(",");
+    var intp = parts[0];
+    var cent = parts[1];
+    var out = "";
+    while (intp.length > 3) {
+      out = "." + intp.slice(-3) + out;
+      intp = intp.slice(0, -3);
     }
+    return intp + out + "," + cent;
   }
 
-  function clampMin(n, min) {
-    n = Number(n);
-    if (isNaN(n)) return min;
-    return Math.max(min, n);
-  }
-
-  function uid() {
-    return (Math.random().toString(36).slice(2, 10) + String(Date.now()).slice(-6));
-  }
-
-  function calcItem(it) {
-    var qtd = parseNum(it.qtd);
-    var unit = parseNum(it.unit);
-    var desconto = parseNum(it.desconto);
-    var total = qtd * unit;
-    var liquido = total - desconto;
-    return { total: total, liquido: liquido };
-  }
-
-  // ===== Máscara moeda (centavos) =====
-  function formatBRLCentsFromDigits(digits) {
-    var d = String(digits || "").replace(/\D+/g, "");
-    var n = d ? parseInt(d, 10) : 0;
-    var value = n / 100;
-    try {
-      return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    } catch (e) {
-      return value.toFixed(2).replace(".", ",");
-    }
-  }
-
-  function attachCurrencyMask(inputEl, opts) {
-    if (!inputEl) return;
-    var defaultValue = (opts && opts.defaultValue) ? opts.defaultValue : "0,00";
-
-    function getDigits() {
-      return String(inputEl.value || "").replace(/\D+/g, "");
-    }
-    function setFromDigits(d) {
-      inputEl.value = formatBRLCentsFromDigits(d);
-      // cursor no fim
-      try {
-        var len = inputEl.value.length;
-        inputEl.setSelectionRange(len, len);
-      } catch (e) {}
-    }
-
-    if (!inputEl.value) inputEl.value = defaultValue;
-
-    inputEl.addEventListener("focus", function () {
-      if (!inputEl.value) inputEl.value = defaultValue;
-      setFromDigits(getDigits());
-    });
-
-    inputEl.addEventListener("input", function () {
-      setFromDigits(getDigits());
-    });
-
-    inputEl.addEventListener("keydown", function (e) {
-      if (e.key === "Backspace") {
-        e.preventDefault();
-        var digits = getDigits();
-        setFromDigits(digits.slice(0, -1));
-        return;
-      }
-      if (e.key && e.key.length === 1 && !/[0-9]/.test(e.key)) {
-        if (e.key !== "," && e.key !== ".") e.preventDefault();
-      }
-    });
-  }
-
-  // ===== CRUD items =====
-  function addItem(payload) {
-    var it = {
-      id: uid(),
-      desc: String(payload.desc || "").trim(),
-      qtd: parseNum(payload.qtd),
-      unit: parseNum(payload.unit),
-      desconto: parseNum(payload.desconto)
-    };
-    state.items.push(it);
-    recalcAndRender();
-  }
-
-  function removeItem(id) {
-    state.items = state.items.filter(function (x) { return x.id !== id; });
-    recalcAndRender();
-  }
-
-  function updateItem(id, patch) {
-    var i;
-    for (i = 0; i < state.items.length; i++) {
-      if (state.items[i].id === id) {
-        if (patch.desc !== undefined) state.items[i].desc = String(patch.desc || "");
-        if (patch.qtd !== undefined) state.items[i].qtd = parseNum(patch.qtd);
-        if (patch.unit !== undefined) state.items[i].unit = parseNum(patch.unit);
-        if (patch.desconto !== undefined) state.items[i].desconto = parseNum(patch.desconto);
-        break;
-      }
-    }
-    recalcAndRender();
-  }
-
-  // ===== Render =====
-  function recalculateTotal() {
+  function calcTotal(){
     var total = 0;
-    for (var i = 0; i < state.items.length; i++) {
-      total += calcItem(state.items[i]).liquido;
+    for (var i=0;i<itens.length;i++){
+      total += itens[i].total;
     }
-    state.totalGeral = total;
-    var t = dom.totalSpan();
-    if (t) t.innerText = toFixed2(total);
+    return total;
   }
 
-  function renderTable() {
-    var tbody = dom.tabelaBody();
-    if (!tbody) return;
-    tbody.innerHTML = "";
+  function renderItens(){
+    var box = qs("listaItens");
+    if (!box) return;
 
-    for (var i = 0; i < state.items.length; i++) {
-      var it = state.items[i];
-      var c = calcItem(it);
-
-      var row = tbody.insertRow();
-      row.dataset.id = it.id;
-
-      row.insertCell(0).innerText = it.desc;
-      row.cells[0].className = "desc";
-      row.insertCell(1).innerText = String(it.qtd);
-      row.insertCell(2).innerText = toFixed2(it.unit);
-      row.insertCell(3).innerText = toFixed2(c.total);
-      row.insertCell(4).innerText = toFixed2(it.desconto);
-      row.insertCell(5).innerText = toFixed2(c.liquido);
-
-      var actionCell = row.insertCell(6);
-      var btn = document.createElement("button");
-      btn.className = "btn-remove";
-      btn.type = "button";
-      btn.innerText = "Remover";
-      (function (id) {
-        btn.addEventListener("click", function () { removeItem(id); });
-      })(it.id);
-      actionCell.appendChild(btn);
+    var html = "";
+    for (var i=0;i<itens.length;i++){
+      var it = itens[i];
+      html += ''
+        + '<div class="card" style="margin:8px 0;">'
+        +   '<div style="display:flex;justify-content:space-between;gap:10px;">'
+        +     '<b>' + (it.desc || "") + '</b>'
+        +     '<button type="button" data-del="'+i+'" style="width:auto;padding:10px 12px;background:#e11d48;">X</button>'
+        +   '</div>'
+        +   '<div style="margin-top:6px;font-size:14px;">'
+        +     'Qtd: <b>'+it.qtd+'</b> · Valor: <b>R$ '+fmtBR(it.valor)+'</b> · Desc: <b>R$ '+fmtBR(it.desconto)+'</b>'
+        +   '</div>'
+        +   '<div style="margin-top:6px;"><b>Subtotal: R$ '+fmtBR(it.total)+'</b></div>'
+        + '</div>';
     }
+
+    if (!html) html = '<div style="opacity:.7;">Nenhum item ainda.</div>';
+    box.innerHTML = html;
+
+    var lbl = qs("lblTotal");
+    if (lbl) lbl.textContent = "Total: R$ " + fmtBR(calcTotal());
   }
 
-  function renderCards() {
-    var wrap = dom.itensCards();
-    if (!wrap) return;
-    wrap.innerHTML = "";
+  function addItemFromForm(){
+    var desc = (qs("inpDesc").value || "").trim();
+    var qtd = parseInt(onlyDigits(qs("inpQtd").value),10);
+    if (!qtd || qtd < 1) qtd = 1;
 
-    for (var i = 0; i < state.items.length; i++) {
-      (function (it) {
-        var c = calcItem(it);
+    var v = moedaToNumber(qs("inpValor").value);
+    var d = moedaToNumber(qs("inpDescR").value);
 
-        var card = document.createElement("div");
-        card.className = "item-card";
+    if (!desc){
+      alert("Preencha a descrição.");
+      return;
+    }
 
-        var top = document.createElement("div");
-        top.className = "top";
+    var total = (qtd * v) - d;
+    if (total < 0) total = 0;
 
-        var sel = document.createElement("select");
-        sel.className = "item-select";
+    itens.push({ desc: desc, qtd: qtd, valor: v, desconto: d, total: total });
 
-        var optCustom = document.createElement("option");
-        optCustom.value = "-1";
-        optCustom.textContent = it.desc || "Item";
-        sel.appendChild(optCustom);
+    // limpa só descrição (mantém qtd 1)
+    qs("inpDesc").value = "";
+    qs("inpQtd").value = "1";
+    qs("inpValor").value = "0,00";
+    qs("inpDescR").value = "0,00";
 
-        for (var k = 1; k < SERVICOS_PRE.length; k++) {
-          var s = SERVICOS_PRE[k];
-          var opt = document.createElement("option");
-          opt.value = String(k);
-          opt.textContent = s.nome;
-          if (it.desc && (it.desc.indexOf(s.nome) >= 0 || it.desc === s.desc)) opt.selected = true;
-          sel.appendChild(opt);
-        }
+    renderItens();
+  }
 
-        var del = document.createElement("button");
-        del.type = "button";
-        del.className = "icon-btn";
-        del.setAttribute("aria-label", "Remover item");
-        del.innerHTML = "🗑️";
-        del.addEventListener("click", function () { removeItem(it.id); });
-
-        top.appendChild(sel);
-        top.appendChild(del);
-
-        var row2 = document.createElement("div");
-        row2.className = "row2";
-
-        var money = document.createElement("div");
-        money.className = "money-input";
-
-        var prefix = document.createElement("span");
-        prefix.className = "prefix";
-        prefix.textContent = CONFIG.CURRENCY_PREFIX;
-
-        var moneyInput = document.createElement("input");
-        moneyInput.type = "text";
-        moneyInput.inputMode = "decimal";
-        moneyInput.value = fmtBR(it.unit);
-        moneyInput.addEventListener("change", function () {
-          updateItem(it.id, { unit: parseNum(moneyInput.value) });
-        });
-
-        money.appendChild(prefix);
-        money.appendChild(moneyInput);
-
-        var step = document.createElement("div");
-        step.className = "qty-stepper";
-
-        var btnMinus = document.createElement("button");
-        btnMinus.type = "button";
-        btnMinus.textContent = "−";
-        btnMinus.addEventListener("click", function () {
-          updateItem(it.id, { qtd: clampMin(it.qtd - 1, 1) });
-        });
-
-        var mid = document.createElement("span");
-        mid.textContent = String(it.qtd);
-
-        var btnPlus = document.createElement("button");
-        btnPlus.type = "button";
-        btnPlus.textContent = "+";
-        btnPlus.addEventListener("click", function () {
-          updateItem(it.id, { qtd: clampMin(it.qtd + 1, 1) });
-        });
-
-        step.appendChild(btnMinus);
-        step.appendChild(mid);
-        step.appendChild(btnPlus);
-
-        row2.appendChild(money);
-        row2.appendChild(step);
-
-        var meta = document.createElement("div");
-        meta.className = "meta";
-        meta.innerHTML =
-          '<span>Total: <b>' + CONFIG.CURRENCY_PREFIX + ' ' + fmtBR(c.total) + '</b></span>' +
-          '<span>Desc: <b>' + CONFIG.CURRENCY_PREFIX + ' ' + fmtBR(it.desconto) + '</b></span>' +
-          '<span>Líquido: <b>' + CONFIG.CURRENCY_PREFIX + ' ' + fmtBR(c.liquido) + '</b></span>';
-
-        sel.addEventListener("change", function () {
-          var idx = parseInt(sel.value, 10);
-          if (isNaN(idx) || idx < 1) return;
-          var s = SERVICOS_PRE[idx];
-          if (!s) return;
-          updateItem(it.id, { desc: s.desc || s.nome, unit: Number(s.unit || 0), qtd: clampMin(it.qtd || (s.qtd || 1), 1) });
-        });
-
-        card.appendChild(top);
-        card.appendChild(row2);
-        card.appendChild(meta);
-
-        wrap.appendChild(card);
-      })(state.items[i]);
+  function toggleForm(){
+    var form = qs("servicoForm");
+    if (!form) return;
+    var show = (form.style.display === "none");
+    form.style.display = show ? "block" : "none";
+    if (show) {
+      try { qs("inpDesc").focus(); } catch(e){}
     }
   }
 
-  function recalcAndRender() {
-    recalculateTotal();
-    renderTable();
-    renderCards();
-  }
-
-  // ===== Serviços prontos (select) =====
-  function popularServicosProntos() {
-    var sel = dom.servicoPronto();
+  function aplicarPreset(){
+    var sel = qs("selPreset");
     if (!sel) return;
-    sel.innerHTML = "";
-    for (var i = 0; i < SERVICOS_PRE.length; i++) {
-      var opt = document.createElement("option");
-      opt.value = String(i);
-      opt.textContent = SERVICOS_PRE[i].nome;
-      sel.appendChild(opt);
-    }
+    if (!sel.value) { alert("Selecione um serviço pronto."); return; }
+    qs("inpDesc").value = sel.value;
+    // abre form e foca
+    var form = qs("servicoForm");
+    if (form && form.style.display === "none") form.style.display = "block";
+    try { qs("inpValor").focus(); } catch(e){}
   }
 
-  function adicionarServicoPronto() {
-    var sel = dom.servicoPronto();
-    if (!sel) return;
-    var idx = parseInt(sel.value, 10);
-    var s = SERVICOS_PRE[idx];
-    if (!s || !s.desc) return;
-
-    // preenche form
-    dom.descricao().value = s.desc;
-    dom.quantidade().value = s.qtd || 1;
-    dom.valorUnitario().value = fmtBR(s.unit || 0);
-    dom.descontoServico().value = "0,00";
-
-    // adiciona item
-    addItem({ desc: s.desc, qtd: s.qtd || 1, unit: Number(s.unit || 0), desconto: 0 });
-
-    // abre formulário no mobile
-    var form = dom.addForm();
-    if (form) form.classList.add("open");
-  }
-
-  // ===== Adicionar manual =====
-  function addServicoFromForm() {
-    var desc = String(dom.descricao().value || "").trim();
-    var qtd = parseNum(dom.quantidade().value);
-    var unit = parseNum(dom.valorUnitario().value);
-    var desconto = parseNum(dom.descontoServico().value);
-
-    if (!desc || !qtd || !unit) return;
-
-    addItem({ desc: desc, qtd: qtd, unit: unit, desconto: desconto });
-
-    dom.descricao().value = "";
-    dom.quantidade().value = "";
-    dom.valorUnitario().value = "0,00";
-    dom.descontoServico().value = "0,00";
-  }
-
-  // ===== Tabs =====
-  function initTabs() {
-    var btns = qsa(".tab-btn");
-    if (!btns.length) return;
-
-    var panes = qsa(".tab-pane");
-
-    function activate(id) {
-      btns.forEach(function (b) {
-        if (b.classList && b.classList.toggle) b.classList.toggle("active", b.getAttribute("data-tab") === id);
+  function initMascaras(){
+    function attachMoneyMask(id){
+      var el = qs(id);
+      if (!el) return;
+      el.value = "0,00";
+      el.addEventListener("input", function(){
+        el.value = formatMoedaFromDigits(el.value);
       });
-      panes.forEach(function (p) {
-        if (p.classList && p.classList.toggle) p.classList.toggle("active", p.id === id);
+      el.addEventListener("focus", function(){
+        if (!el.value) el.value = "0,00";
       });
-      if (id === "tab-prontos") {
-        var form = dom.addForm();
-        if (form) form.classList.add("open");
-      }
     }
-
-    btns.forEach(function (b) {
-      b.addEventListener("click", function () {
-        activate(b.getAttribute("data-tab"));
-      });
-    });
-
-    activate("tab-add");
+    attachMoneyMask("inpValor");
+    attachMoneyMask("inpDescR");
   }
 
-  // ===== Share =====
-  function openWhatsAppFallback() {
-    var cliente = (dom.cliente().value || "Cliente");
-    var msg = encodeURIComponent("Olá, " + cliente + "! Segue o orçamento em PDF. (Anexo)");
-    window.open("https://wa.me/?text=" + msg, "_blank");
-  }
+  function initEventos(){
+    // botões diretos
+    qs("btnToggleForm").addEventListener("click", toggleForm);
+    qs("btnAddItem").addEventListener("click", addItemFromForm);
+    qs("btnAplicarPreset").addEventListener("click", aplicarPreset);
 
-  function sharePdf() {
-    if (!state.lastPdfBlob) {
-      alert("Gere o PDF antes de compartilhar.");
-      return;
-    }
-    try {
-      var file = new File([state.lastPdfBlob], state.lastPdfFilename, { type: "application/pdf" });
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ title: "Orçamento", text: "Segue o orçamento em PDF.", files: [file] })["catch"](function(){});
-      } else {
-        alert("Seu navegador não suporta compartilhar arquivo direto. Use o WhatsApp e anexe o PDF manualmente.");
-      }
-    } catch (e) {
-      alert("Compartilhamento não disponível neste aparelho. Anexe o PDF manualmente no WhatsApp.");
-    }
-  }
-
-  // ===== PDF =====
-  function loadImageAsDataURL(src) {
-    return new Promise(function (resolve, reject) {
-      var img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = function () {
-        var canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        var ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
-        try { resolve(canvas.toDataURL("image/png")); }
-        catch (err) { reject(err); }
-      };
-      img.onerror = reject;
-      img.src = src;
+    // delete por delegação
+    qs("listaItens").addEventListener("click", function(e){
+      var t = e.target;
+      var idx = t && t.getAttribute ? t.getAttribute("data-del") : null;
+      if (idx === null) return;
+      idx = parseInt(idx,10);
+      if (isNaN(idx)) return;
+      itens.splice(idx,1);
+      renderItens();
     });
   }
 
-  function getBodyForPdf() {
-    return state.items.map(function (it) {
-      var c = calcItem(it);
-      return [it.desc, String(it.qtd), toFixed2(it.unit), toFixed2(c.total), toFixed2(it.desconto), toFixed2(c.liquido)];
-    });
+  // Boot
+  function boot(){
+    if (!qs("servicosCard")) return; // se você colar em outro lugar, não quebra
+    initMascaras();
+    initEventos();
+    renderItens();
   }
 
-  function gerarPdf() {
-    if (state.totalGeral === 0) {
-      alert("Adicione pelo menos um serviço.");
-      return;
-    }
-
-    var jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null;
-    if (!jsPDF) {
-      alert("jsPDF não carregou.");
-      return;
-    }
-
-    var doc = new jsPDF();
-    var pageW = doc.internal.pageSize.getWidth();
-    var margin = CONFIG.PDF.margin;
-    var centerX = pageW / 2;
-
-    var cliente = dom.cliente().value;
-    var telefone = dom.telefone().value;
-    var endereco = dom.endereco().value;
-    var pagamento = dom.pagamento().value;
-    var obs = dom.observacoes().value;
-    var data = (new Date()).toLocaleDateString();
-
-    loadImageAsDataURL(CONFIG.PDF.logoPath).then(function (logoDataUrl) {
-      if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 15, 8, 100, 40);
-
-      var lineY = 52;
-      var propostaY = 49;
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
-      doc.setTextColor(0, 0, 0);
-      doc.text(CONFIG.PDF.proposalTitle, centerX, propostaY, { align: "center" });
-
-      doc.setDrawColor(CONFIG.PDF.lineBlue[0], CONFIG.PDF.lineBlue[1], CONFIG.PDF.lineBlue[2]);
-      doc.setLineWidth(1);
-      doc.line(margin, lineY, pageW - margin, lineY);
-
-      var y = 65;
-      doc.setFillColor(CONFIG.PDF.boxBlue[0], CONFIG.PDF.boxBlue[1], CONFIG.PDF.boxBlue[2]);
-      doc.roundedRect(12, y - 7, pageW - 24, 22, 3, 3, "F");
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(0, 0, 0);
-      doc.text("Cliente:", margin, y);
-
-      doc.setFont("helvetica", "normal");
-      doc.text(cliente || "-", margin + 25, y);
-
-      y += 7;
-      doc.setTextColor(90, 90, 90);
-      doc.text("Telefone: " + (telefone || "-"), margin, y);
-
-      y += 7;
-      doc.text("Endereço: " + (endereco || "-"), margin, y);
-
-      y += 12;
-
-      if (!doc.autoTable) {
-        alert("autoTable não carregou.");
-        return;
-      }
-
-      doc.autoTable({
-        startY: y,
-        head: [["Descrição", "Qtd", "Unit", "Total", "Desc", "Líquido"]],
-        body: getBodyForPdf(),
-        theme: "plain",
-        styles: { fontSize: 10, cellPadding: 3 },
-        didDrawCell: function (dataCell) {
-          if (dataCell.section === "head" || dataCell.section === "body") {
-            doc.setDrawColor(210, 210, 210);
-            doc.setLineWidth(0.5);
-            doc.line(dataCell.cell.x, dataCell.cell.y + dataCell.cell.height, dataCell.cell.x + dataCell.cell.width, dataCell.cell.y + dataCell.cell.height);
-          }
-        },
-        columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } }
-      });
-
-      y = doc.lastAutoTable.finalY + 10;
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.text("Total Geral: " + CONFIG.CURRENCY_PREFIX + " " + toFixed2(state.totalGeral), pageW - margin, y, { align: "right" });
-      y += 10;
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(0, 0, 0);
-
-      var label = "Forma de Pagamento:";
-      doc.text(label, margin, y);
-
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(90, 90, 90);
-      doc.text(pagamento || "-", margin + doc.getTextWidth(label) + 4, y);
-      y += 12;
-
-      if (obs) {
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(0, 0, 0);
-        doc.text("Observações:", margin, y);
-        y += 6;
-
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(90, 90, 90);
-        var linhas = doc.splitTextToSize(obs, pageW - (margin * 2));
-        doc.text(linhas, margin, y);
-        y += (linhas.length * 5) + 10;
-      } else {
-        y += 6;
-      }
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(90, 90, 90);
-      doc.text("Data: " + data, margin, y);
-
-      // assinatura removida (pedido)
-      state.lastPdfFilename = CONFIG.FILENAME_PREFIX + safeFilename(cliente) + ".pdf";
-      state.lastPdfBlob = doc.output("blob");
-
-      doc.save(state.lastPdfFilename);
-      var sa = dom.shareArea();
-      if (sa) sa.style.display = "block";
-    })["catch"](function () {
-      // sem logo
-      state.lastPdfFilename = CONFIG.FILENAME_PREFIX + safeFilename(dom.cliente().value) + ".pdf";
-      alert("Não foi possível carregar o logo. O PDF será gerado sem logo.");
-    });
-  }
-
-  // ===== Mobile UX (sem resize) =====
-  function initMobileAddToggle() {
-    var form = dom.addForm();
-    if (form && !isMobile()) form.classList.add("open");
-  }
-    });
-  }
-
-  // ===== PWA =====
-  function initPWA() {
-    // DESATIVADO (site normal)
-  }
-
-  // ===== Init =====
-  function bindEvents() {
-    var el;
-
-    // Botão superior: abre/fecha formulário
-    el = dom.btnToggleAdd();
-    if (el) el.addEventListener("click", function () {
-      var form = dom.addForm();
-      if (!form) return;
-
-      form.classList.toggle("open");
-      if (form.classList.contains("open")) {
-        var d = dom.descricao();
-        try { if (d) d.focus(); } catch (e) {}
-        try { form.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e2) {}
-      }
-    });
-
-    // Botão interno: adiciona serviço manualmente
-    el = dom.btnAddServico();
-    if (el) el.addEventListener("click", addServicoFromForm);
-
-    el = dom.btnShare();
-    if (el) el.addEventListener("click", sharePdf);
-
-    el = dom.btnWhatsAppFallback();
-    if (el) el.addEventListener("click", openWhatsAppFallback);
-
-    el = dom.btnGerarPDF();
-    if (el) el.addEventListener("click", gerarPdf);
-
-    el = dom.btnAplicarServico();
-    if (el) el.addEventListener("click", adicionarServicoPronto);
-
-    el = dom.servicoPronto();
-    if (el) el.addEventListener("change", function () { });
-  }
-
-  function init() {
-    popularServicosProntos();
-    initTabs();
-    bindEvents();
-    initMobileAddToggle();
-    attachCurrencyMask(dom.valorUnitario(), { defaultValue: "0,00" });
-    attachCurrencyMask(dom.descontoServico(), { defaultValue: "0,00" });
-    initPWA();
-    recalcAndRender();
-  }
-  try {
-    init();
-    setJsStatus("JS: OK");
-    window.__APP_BOOT__ = "ok";
-  } catch (err) {
-    showBootError(err);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
   }
 })();
