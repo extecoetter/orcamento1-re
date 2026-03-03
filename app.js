@@ -1,7 +1,12 @@
 (function () {
   "use strict";
 
-  var APP_VERSION = "v26-loader-debug";
+  // Sinal para o loader: este script EXECUTOU
+  try { window.__APP_EXECUTED__ = true; } catch(e) {}
+  try { var _st = document.getElementById("jsStatus"); if (_st) _st.textContent = "JS: executando... (v27-exec-check)"; } catch(e2) {}
+
+
+  var APP_VERSION = "v27-exec-check";
 
   function qs(sel, root) { return (root || document).querySelector(sel); }
   function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
@@ -472,7 +477,7 @@ el = dom.btnAddServico();
 
   function init(){
     try { if (dom.appVersion()) dom.appVersion().textContent = APP_VERSION; } catch(e) {}
-    try { if (dom.jsStatus()) dom.jsStatus().textContent = "JS: OK (v26-loader-debug)"; } catch(e2) {}
+    try { if (dom.jsStatus()) dom.jsStatus().textContent = "JS: OK (v27-exec-check)"; } catch(e2) {}
 
     popularServicosProntos();
     initMobileDefaults();
