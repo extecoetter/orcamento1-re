@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>RE00 Climatização - Orçamento</title>
+  <title>RE Climatização - Orçamento</title>
 
   <meta name="theme-color" content="#0077cc"/>
 
@@ -86,7 +86,7 @@
     <img id="logoPdf" src="icons/icon-192.png" alt="Logo" style="display:none;" />
     <div class="card">
       <h2>Proposta Comercial</h2>
-      <div class="app-version">Versão: <span id="appVersion">v25-fixes-logo-moeda-layout</span> · <span id="jsStatus">JS: carregando…</span></div>
+      <div class="app-version">Versão: <span id="appVersion">v26-loader-debug</span> · <span id="jsStatus">JS: carregando…</span></div>
 
       <label>Cliente</label>
       <input id="cliente" type="text"/>
@@ -188,7 +188,28 @@
     <pre id="bootErrorText"></pre>
     <button type="button" id="btnBootReload">Recarregar</button>
   </div>
+  <script>
+    (function(){
+      var st = document.getElementById("jsStatus");
+      if (st) st.textContent = "JS: inline OK (v26-loader-debug)";
 
-  <script src="./app.js?v=v25-fixes-logo-moeda-layout"></script>
+      function show(msg){
+        try {
+          var box = document.getElementById("bootError");
+          var txt = document.getElementById("bootErrorText");
+          var btn = document.getElementById("btnBootReload");
+          if (btn) btn.onclick = function(){ location.reload(); };
+          if (txt) txt.textContent = msg;
+          if (box) box.style.display = "block";
+        } catch(e){}
+      }
+
+      var s = document.createElement("script");
+      s.src = "./app.js?v=v26-loader-debug&ts=" + Date.now();
+      s.onload = function(){ if (st) st.textContent = "JS: app.js carregado (v26-loader-debug)"; };
+      s.onerror = function(){ show("Falha ao carregar app.js. Verifique se o arquivo app.js existe na mesma pasta do index.html e se o nome está exatamente 'app.js' (minúsculo)."); };
+      document.body.appendChild(s);
+    })();
+  </script>
 </body>
 </html>
