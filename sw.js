@@ -1,4 +1,4 @@
-const CACHE_NAME = "re-orcamento-v18-delegacao";
+const CACHE_NAME = "re-orcamento-v18b-delegacao-fix";
 const ASSETS = [
   "./",
   "./index.html",
