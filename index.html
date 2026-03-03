@@ -315,6 +315,8 @@
     <div class="currency-wrap"><span class="prefix">R$</span><input id="descontoServico" type="text" inputmode="numeric" autocomplete="off" /></div>
   </div>
 </div>
+
+<button id="btnAddServico" type="button" style="display:none;">Adicionar Serviço</button>
 </div><!-- /addForm -->
 <div class="itens-cards" id="itensCards"></div>
 <div class="table-wrap"><table id="tabela">
@@ -340,6 +342,7 @@
 <button id="btnGerarPDF" type="button">GERAR ORÇAMENTO</button><div class="bottom-spacer"></div>
 </div>
 <script>
+
 /**
  * RE Orçamento (ES5 compatível p/ iPhone antigo)
  * - Fonte única: state.items[]
@@ -785,29 +788,23 @@
     dom.quantidade().value = "";
     dom.valorUnitario().value = "0,00";
     dom.descontoServico().value = "0,00";
-  
+  }
+
   function onAddButtonClick() {
     var form = dom.addForm();
-    if (!form) {
-      // Se não existe formulário, tenta adicionar direto (não esperado)
-      addServicoFromForm();
-      return;
-    }
+    if (!form) { addServicoFromForm(); return; }
 
-    // Se estiver fechado (principalmente no mobile), abre e foca
     if (!form.classList.contains("open")) {
       form.classList.add("open");
-      var d = dom.descricao();
-      try { if (d) d.focus(); } catch (e) {}
+      var el = dom.descricao();
+      try { if (el) el.focus(); } catch (e) {}
       try { form.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
       return;
     }
 
-    // Se estiver aberto, adiciona
     addServicoFromForm();
   }
 
-}
 
   // ===== Tabs =====
   function initTabs() {
@@ -1028,8 +1025,6 @@
     var form = dom.addForm();
     if (form && !isMobile()) form.classList.add("open");
   }
-    });
-  }
 
   // ===== PWA =====
   function initPWA() {
@@ -1043,9 +1038,11 @@
   function bindEvents() {
     var el;
 
-    // Botão único: Adicionar Serviço (abre formulário e/ou adiciona)
     el = dom.btnToggleAdd();
     if (el) el.addEventListener("click", function () { onAddButtonClick(); });
+
+    el = dom.btnAddServico();
+    if (el) el.addEventListener("click", addServicoFromForm);
 
     el = dom.btnShare();
     if (el) el.addEventListener("click", sharePdf);
@@ -1059,7 +1056,6 @@
     el = dom.btnAplicarServico();
     if (el) el.addEventListener("click", adicionarServicoPronto);
 
-    // mudança no select é só seleção (não adiciona sozinho)
     el = dom.servicoPronto();
     if (el) el.addEventListener("change", function () { });
   }
@@ -1078,6 +1074,7 @@
 
   init();
 })();
+
 </script>
 </body>
 </html>
