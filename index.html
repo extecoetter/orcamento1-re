@@ -296,7 +296,7 @@
   <p class="muted" style="margin:10px 0 0 0;">Dica: ao aplicar, a descrição, quantidade e valor unitário são preenchidos automaticamente.</p>
 </div>
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;"/>
-<button class="btn-dashed" id="btnToggleAdd" type="button"><span class="plus">+</span>ADICIONAR ITEM</button>
+<button class="btn-dashed" id="btnToggleAdd" type="button">Adicionar Serviço</button>
 <div id="addForm"><label class="field-label">Descrição</label>
 
 <input id="descricao" placeholder="Descrição" type="text"/>
@@ -315,8 +315,6 @@
     <div class="currency-wrap"><span class="prefix">R$</span><input id="descontoServico" type="text" inputmode="numeric" autocomplete="off" /></div>
   </div>
 </div>
-
-<button id="btnAddServico" type="button">Adicionar Serviço</button>
 </div><!-- /addForm -->
 <div class="itens-cards" id="itensCards"></div>
 <div class="table-wrap"><table id="tabela">
@@ -787,7 +785,29 @@
     dom.quantidade().value = "";
     dom.valorUnitario().value = "0,00";
     dom.descontoServico().value = "0,00";
+  
+  function onAddButtonClick() {
+    var form = dom.addForm();
+    if (!form) {
+      // Se não existe formulário, tenta adicionar direto (não esperado)
+      addServicoFromForm();
+      return;
+    }
+
+    // Se estiver fechado (principalmente no mobile), abre e foca
+    if (!form.classList.contains("open")) {
+      form.classList.add("open");
+      var d = dom.descricao();
+      try { if (d) d.focus(); } catch (e) {}
+      try { form.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
+      return;
+    }
+
+    // Se estiver aberto, adiciona
+    addServicoFromForm();
   }
+
+}
 
   // ===== Tabs =====
   function initTabs() {
@@ -1007,16 +1027,7 @@
   function initMobileAddToggle() {
     var form = dom.addForm();
     if (form && !isMobile()) form.classList.add("open");
-    var btn = dom.btnToggleAdd();
-    if (!btn || !form) return;
-
-    btn.addEventListener("click", function () {
-      form.classList.toggle("open");
-      if (form.classList.contains("open")) {
-        var el = dom.descricao();
-        try { if (el) el.focus(); } catch (e) {}
-        try { form.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
-      }
+  }
     });
   }
 
@@ -1032,8 +1043,9 @@
   function bindEvents() {
     var el;
 
-    el = dom.btnAddServico();
-    if (el) el.addEventListener("click", addServicoFromForm);
+    // Botão único: Adicionar Serviço (abre formulário e/ou adiciona)
+    el = dom.btnToggleAdd();
+    if (el) el.addEventListener("click", function () { onAddButtonClick(); });
 
     el = dom.btnShare();
     if (el) el.addEventListener("click", sharePdf);
@@ -1047,9 +1059,11 @@
     el = dom.btnAplicarServico();
     if (el) el.addEventListener("click", adicionarServicoPronto);
 
+    // mudança no select é só seleção (não adiciona sozinho)
     el = dom.servicoPronto();
-    if (el) el.addEventListener("change", function () { /* só seleção */ });
+    if (el) el.addEventListener("change", function () { });
   }
+
 
   function init() {
     popularServicosProntos();
