@@ -1,384 +1,6 @@
-<!DOCTYPE html>
-
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>Orçamento</title>
-<!-- PWA -->
-<link href="manifest.webmanifest" rel="manifest"/>
-<meta content="#0077cc" name="theme-color"/>
-<!-- iOS (Safari) -->
-<meta content="yes" name="apple-mobile-web-app-capable"/>
-<meta content="default" name="apple-mobile-web-app-status-bar-style"/>
-<meta content="RE3 Orçamentos" name="apple-mobile-web-app-title"/>
-<link href="icons/icon-192.png" rel="apple-touch-icon"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<style>
-    body{ margin:0; font-family:Arial, sans-serif; background:#f4f6f9; }
-    .container{ padding:15px; max-width:700px; margin:auto; }
-    .card{ background:white; padding:15px; border-radius:12px; margin-bottom:15px; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-    h2{ margin:0 0 10px 0; color:#0077cc; }
-    input, textarea, select{
-      width:100%; padding:12px; margin:6px 0 12px 0;
-      border-radius:10px; border:1px solid #ccc; font-size:16px; box-sizing:border-box;
-    }
-    button{
-      width:100%; padding:15px; border:none; border-radius:10px;
-      background:#0077cc; color:white; font-size:16px; font-weight:bold; cursor:pointer;
-    }
-    button.secondary{ background:#4a5568; }
-    .row{ display:flex; gap:10px; }
-    .row > *{ flex:1; }
-    table{ width:100%; border-collapse:collapse; font-size:14px; }
-    th, td{ border:1px solid #ddd; padding:8px; text-align:center; }
-    td.desc{ text-align:left; }
-    .btn-remove{ background:#e11d48; color:#fff; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; font-weight:700; }
-    .total{ text-align:right; font-weight:bold; font-size:18px; margin-top:10px; }
-    .share-area{ display:none; margin-top:10px; }
-    .share-area button{ margin-top:10px; }
-  
-
-    /* ===== Mobile upgrade (cards + safe tap targets) ===== */
-    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:12px; }
-    .itens-cards{ display:none; }
-
-    .icon-btn{
-      border:none; background:transparent; width:44px; height:44px; padding:0;
-      display:flex; align-items:center; justify-content:center;
-      border-radius:12px;
-    }
-    .icon-btn:active{ transform:scale(0.98); }
-
-    .qty-stepper{
-      display:flex; align-items:center; justify-content:space-between;
-      border:1px solid #d5dbe3; border-radius:12px; overflow:hidden;
-      height:48px; min-width:140px;
-      background:#f5f7fa;
-    }
-    .qty-stepper button{
-      width:48px; height:48px; border:none; background:transparent;
-      font-size:22px; font-weight:700; color:#1f2937;
-    }
-    .qty-stepper span{
-      flex:1; text-align:center; font-size:18px; font-weight:700;
-      color:#1f2937;
-    }
-
-    .money-input{
-      display:flex; align-items:center; gap:10px;
-      border:1px solid #d5dbe3; border-radius:12px; padding:0 12px;
-      height:48px; background:#fff;
-    }
-    .money-input .prefix{ color:#6b7280; font-weight:700; }
-    .money-input input{
-      margin:0; border:none; padding:0; height:44px;
-      font-size:18px; font-weight:800; outline:none;
-    }
-
-    .item-card{
-      background:#fff;
-      border:1px solid #e6eaf0;
-      border-radius:16px;
-      padding:14px;
-      margin:12px 0;
-      box-shadow:0 6px 16px rgba(0,0,0,0.05);
-    }
-    .item-card .top{
-      display:flex; align-items:center; gap:10px;
-    }
-    .item-card .desc{
-      flex:1;
-      font-size:18px;
-      font-weight:800;
-      color:#1f2937;
-      margin:0;
-      line-height:1.2;
-    }
-    .item-card .row2{
-      display:flex; gap:12px; margin-top:12px; align-items:center;
-    }
-    .item-card .row2 .money-input{ flex:1; }
-    .item-card .meta{
-      margin-top:10px; display:flex; gap:12px; flex-wrap:wrap;
-      color:#6b7280; font-size:13px; font-weight:700;
-    }
-    .item-card .meta b{ color:#111827; }
-    /* Removido: Serviços prontos (substituído por "ADICIONAR ITEM") */
-    #servicosProntosBlock{ display:none; }
-    .field-label{
-      display:block;
-      font-size:12px;
-      font-weight:800;
-      color:#64748b;
-      margin:10px 0 6px;
-      letter-spacing:0.02em;
-      text-transform:uppercase;
-    }
-    .field-grid-3{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap:10px;
-    }
-    @media (max-width: 768px){
-      .field-grid-3{ grid-template-columns: 1fr 1fr 1fr; }
-    }
-
-
-
-
-
-    
-    /* ===== Mobile premium controls ===== */
-    .btn-dashed{
-      width:100%;
-      border:2px dashed #cbd5e1;
-      background:transparent;
-      color:#475569;
-      font-weight:800;
-      border-radius:14px;
-      padding:14px;
-    }
-    .btn-dashed .plus{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      width:26px;height:26px;
-      border-radius:999px;
-      background:#e2e8f0;
-      margin-right:10px;
-      font-weight:900;
-    }
-    .muted{
-      color:#94a3b8;
-      font-weight:700;
-    }
-    .item-select{
-      flex:1;
-      border:1px solid #d5dbe3;
-      border-radius:14px;
-      padding:10px 12px;
-      height:52px;
-      font-size:16px;
-      font-weight:800;
-      background:#f8fafc;
-      margin:0;
-    }
-
-
-@media (max-width: 768px){
-      #addForm{ display:none; }
-      #addForm.open{ display:block; }
-      .container{ padding:12px; }
-      input, textarea, select{ min-height:44px; }
-      button{ min-height:46px; border-radius:14px; }
-      .two-col{ display:block !important; }
-      .two-col > div{ width:100% !important; }
-
-      /* Hide desktop table, show cards */
-      #tabela{ display:none; }
-      .itens-cards{ display:block; }
-
-      /* Sticky bottom main action */
-      #btnGerarPDF{
-        position:sticky;
-        bottom:10px;
-        z-index:20;
-        box-shadow:0 10px 24px rgba(0,0,0,0.18);
-        width:100%;
-      }
-      .bottom-spacer{ height:80px; }
-    }
-/* ===== Title pill (top) ===== */
-.title-pill{
-  display:inline-block;
-  background:#0077cc;
-  color:#fff;
-  font-weight:900;
-  padding:12px 14px;
-  border-radius:14px;
-  letter-spacing:0.02em;
-  margin-bottom:10px;
-}
-
-/* ===== Tabs (Serviços) ===== */
-.tabs{
-  display:flex;
-  gap:10px;
-  margin:6px 0 12px 0;
-}
-.tab-btn{
-  flex:1;
-  border:none;
-  border-radius:14px;
-  padding:12px 10px;
-  font-weight:900;
-  background:#e2e8f0;
-  color:#1f2937;
-  cursor:pointer;
-}
-.tab-btn.active{
-  background:#0077cc;
-  color:#fff;
-}
-.tab-pane{ display:none; }
-.tab-pane.active{ display:block; }
-
-/* ===== Currency input mask (form) ===== */
-.currency-wrap{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  border:1px solid #d5dbe3;
-  border-radius:12px;
-  padding:0 12px;
-  height:52px;
-  background:#fff;
-}
-.currency-wrap .prefix{
-  color:#6b7280;
-  font-weight:900;
-}
-.currency-wrap input{
-  margin:0;
-  border:none;
-  outline:none;
-  padding:0;
-  height:44px;
-  font-size:18px;
-  font-weight:900;
-}
-/* ===== Versão (debug) ===== */
-.app-version{
-  margin-top:-6px;
-  color:#6b7280;
-  font-weight:800;
-  font-size:12px;
-}
-
-/* ===== Erro de inicialização (debug) ===== */
-#bootError{
-  display:none;
-  position:fixed;
-  z-index:9999;
-  left:12px;
-  right:12px;
-  bottom:12px;
-  background:#111827;
-  color:#fff;
-  border-radius:14px;
-  padding:12px 14px;
-  font-size:13px;
-  line-height:1.35;
-  box-shadow:0 10px 30px rgba(0,0,0,.25);
-}
-#bootError b{ font-weight:900; }
-#bootError .small{ opacity:.85; font-size:12px; margin-top:6px; }
-#bootError button{
-  margin-top:10px;
-  border:none;
-  border-radius:10px;
-  padding:10px 12px;
-  font-weight:900;
-  background:#2563eb;
-  color:#fff;
-}
-</style>
-</head>
-<body>
-<div class="container">
-<div class="card">
-<div class="title-pill">Proposta Comercial</div>
-<div class="app-version">Versão: v19-fix-botoes</div>
-<label>Cliente</label>
-<input id="cliente" type="text"/>
-<div class="row">
-<div>
-<label>Telefone</label>
-<input id="telefoneCliente" type="text"/>
-</div>
-<div>
-<label>Forma de Pagamento</label>
-<select id="pagamento">
-<option>Dinheiro</option>
-<option>PIX</option>
-<option>Cartão</option>
-<option>Transferência</option>
-<option>Parcelado</option>
-</select>
-</div>
-</div>
-<label>Endereço</label>
-<input id="enderecoCliente" type="text"/>
-<label>Observações</label>
-<textarea id="observacoes"></textarea>
-</div>
-<div class="card">
-<h2>Serviços</h2>
-<div class="tabs">
-  <button type="button" class="tab-btn active" data-tab="tab-add">Adicionar</button>
-  <button type="button" class="tab-btn" data-tab="tab-prontos">Serviços prontos</button>
-</div>
-
-<div id="tab-add" class="tab-pane active">
-  <p class="muted" style="margin:8px 0 12px 0;">Adicione um item manualmente.</p>
-</div>
-
-<div id="tab-prontos" class="tab-pane">
-  <label class="field-label">Serviços prontos</label>
-  <select id="servicoPronto" class="item-select"></select>
-  <button class="secondary" id="btnAplicarServico" type="button" style="margin-top:10px;">Adicionar serviço</button>
-  <p class="muted" style="margin:10px 0 0 0;">Dica: ao aplicar, a descrição, quantidade e valor unitário são preenchidos automaticamente.</p>
-</div>
-<hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;"/>
-<button class="btn-dashed" id="btnToggleAdd" type="button"><span class="plus">+</span>ADICIONAR ITEM</button>
-<div id="addForm"><label class="field-label">Descrição</label>
-
-<input id="descricao" placeholder="Descrição" type="text"/>
-
-<div class="field-grid-3">
-  <div>
-    <label class="field-label">Quantidade</label>
-    <input id="quantidade" placeholder="Qtd" type="number"/>
-  </div>
-  <div>
-    <label class="field-label">Valor unitário</label>
-    <div class="currency-wrap"><span class="prefix">R$</span><input id="valorUnitario" type="text" inputmode="numeric" autocomplete="off" /></div>
-  </div>
-  <div>
-    <label class="field-label">Desconto</label>
-    <div class="currency-wrap"><span class="prefix">R$</span><input id="descontoServico" type="text" inputmode="numeric" autocomplete="off" /></div>
-  </div>
-</div>
-
-<button id="btnAddServico" type="button">Adicionar Serviço</button>
-</div><!-- /addForm -->
-<div class="itens-cards" id="itensCards"></div>
-<div class="table-wrap"><table id="tabela">
-<thead>
-<tr>
-<th>Descrição</th>
-<th>Qtd</th>
-<th>Unit</th>
-<th>Total</th>
-<th>Desc</th>
-<th>Líquido</th>
-<th>Ação</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table></div>
-<p class="total">Total: R$ <span id="total">0.00</span></p>
-<div class="share-area" id="shareArea">
-<button class="secondary" id="btnShare" type="button">Compartilhar (WhatsApp)</button>
-<button class="secondary" id="btnWhatsAppFallback" type="button">Abrir WhatsApp (mensagem)</button>
-</div>
-</div>
-<button id="btnGerarPDF" type="button">GERAR PDF</button><div class="bottom-spacer"></div>
 <script>
 /**
- * RE Orçamento (ES5 compatível p/ iPhone antigo)
+ * RE1 Orçamento (ES5 compatível p/ iPhone antigo)
  * - Fonte única: state.items[]
  * - Serviços prontos com abas
  * - Máscara de moeda (digita da direita pra esquerda)
@@ -387,7 +9,7 @@
 (function () {
   "use strict";
 
-  var APP_VERSION = "v19-fix-botoes";
+  var APP_VERSION = "v19b-fix-botoes-OK";
 
   // ===== Config =====
   var CONFIG = {
@@ -617,9 +239,562 @@
       if (e.key && e.key.length === 1 && !/[0-9]/.test(e.key)) {
         if (e.key !== "," && e.key !== ".") e.preventDefault();
       }
-    });
+  // ===== CRUD items =====
+  function addItem(payload) {
+    var it = {
+      id: uid(),
+      desc: String(payload.desc || "").trim(),
+      qtd: parseNum(payload.qtd),
+      unit: parseNum(payload.unit),
+      desconto: parseNum(payload.desconto)
+    };
+    state.items.push(it);
+    recalcAndRender();
   }
 
+  function removeItem(id) {
+    state.items = state.items.filter(function (x) { return x.id !== id; });
+    recalcAndRender();
+  }
+
+  function updateItem(id, patch) {
+    var i;
+    for (i = 0; i < state.items.length; i++) {
+      if (state.items[i].id === id) {
+        if (patch.desc !== undefined) state.items[i].desc = String(patch.desc || "");
+        if (patch.qtd !== undefined) state.items[i].qtd = parseNum(patch.qtd);
+        if (patch.unit !== undefined) state.items[i].unit = parseNum(patch.unit);
+        if (patch.desconto !== undefined) state.items[i].desconto = parseNum(patch.desconto);
+        break;
+      }
+    }
+    recalcAndRender();
+  }
+
+  // ===== Render =====
+  function recalculateTotal() {
+    var total = 0;
+    for (var i = 0; i < state.items.length; i++) {
+      total += calcItem(state.items[i]).liquido;
+    }
+    state.totalGeral = total;
+    var t = dom.totalSpan();
+    if (t) t.innerText = toFixed2(total);
+  }
+
+  function renderTable() {
+    var tbody = dom.tabelaBody();
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    for (var i = 0; i < state.items.length; i++) {
+      var it = state.items[i];
+      var c = calcItem(it);
+
+      var row = tbody.insertRow();
+      row.dataset.id = it.id;
+
+      row.insertCell(0).innerText = it.desc;
+      row.cells[0].className = "desc";
+      row.insertCell(1).innerText = String(it.qtd);
+      row.insertCell(2).innerText = toFixed2(it.unit);
+      row.insertCell(3).innerText = toFixed2(c.total);
+      row.insertCell(4).innerText = toFixed2(it.desconto);
+      row.insertCell(5).innerText = toFixed2(c.liquido);
+
+      var actionCell = row.insertCell(6);
+      var btn = document.createElement("button");
+      btn.className = "btn-remove";
+      btn.type = "button";
+      btn.innerText = "Remover";
+      (function (id) {
+        btn.addEventListener("click", function () { removeItem(id); });
+      })(it.id);
+      actionCell.appendChild(btn);
+    }
+  }
+
+  function renderCards() {
+    var wrap = dom.itensCards();
+    if (!wrap) return;
+    wrap.innerHTML = "";
+
+    for (var i = 0; i < state.items.length; i++) {
+      (function (it) {
+        var c = calcItem(it);
+
+        var card = document.createElement("div");
+        card.className = "item-card";
+
+        var top = document.createElement("div");
+        top.className = "top";
+
+        var sel = document.createElement("select");
+        sel.className = "item-select";
+
+        var optCustom = document.createElement("option");
+        optCustom.value = "-1";
+        optCustom.textContent = it.desc || "Item";
+        sel.appendChild(optCustom);
+
+        for (var k = 1; k < SERVICOS_PRE.length; k++) {
+          var s = SERVICOS_PRE[k];
+          var opt = document.createElement("option");
+          opt.value = String(k);
+          opt.textContent = s.nome;
+          if (it.desc && (it.desc.indexOf(s.nome) >= 0 || it.desc === s.desc)) opt.selected = true;
+          sel.appendChild(opt);
+        }
+
+        var del = document.createElement("button");
+        del.type = "button";
+        del.className = "icon-btn";
+        del.setAttribute("aria-label", "Remover item");
+        del.innerHTML = "🗑️";
+        del.addEventListener("click", function () { removeItem(it.id); });
+
+        top.appendChild(sel);
+        top.appendChild(del);
+
+        var row2 = document.createElement("div");
+        row2.className = "row2";
+
+        var money = document.createElement("div");
+        money.className = "money-input";
+
+        var prefix = document.createElement("span");
+        prefix.className = "prefix";
+        prefix.textContent = CONFIG.CURRENCY_PREFIX;
+
+        var moneyInput = document.createElement("input");
+        moneyInput.type = "text";
+        moneyInput.inputMode = "decimal";
+        moneyInput.value = fmtBR(it.unit);
+        moneyInput.addEventListener("change", function () {
+          updateItem(it.id, { unit: parseNum(moneyInput.value) });
+        });
+
+        money.appendChild(prefix);
+        money.appendChild(moneyInput);
+
+        var step = document.createElement("div");
+        step.className = "qty-stepper";
+
+        var btnMinus = document.createElement("button");
+        btnMinus.type = "button";
+        btnMinus.textContent = "−";
+        btnMinus.addEventListener("click", function () {
+          updateItem(it.id, { qtd: clampMin(it.qtd - 1, 1) });
+        });
+
+        var mid = document.createElement("span");
+        mid.textContent = String(it.qtd);
+
+        var btnPlus = document.createElement("button");
+        btnPlus.type = "button";
+        btnPlus.textContent = "+";
+        btnPlus.addEventListener("click", function () {
+          updateItem(it.id, { qtd: clampMin(it.qtd + 1, 1) });
+        });
+
+        step.appendChild(btnMinus);
+        step.appendChild(mid);
+        step.appendChild(btnPlus);
+
+        row2.appendChild(money);
+        row2.appendChild(step);
+
+        var meta = document.createElement("div");
+        meta.className = "meta";
+        meta.innerHTML =
+          '<span>Total: <b>' + CONFIG.CURRENCY_PREFIX + ' ' + fmtBR(c.total) + '</b></span>' +
+          '<span>Desc: <b>' + CONFIG.CURRENCY_PREFIX + ' ' + fmtBR(it.desconto) + '</b></span>' +
+          '<span>Líquido: <b>' + CONFIG.CURRENCY_PREFIX + ' ' + fmtBR(c.liquido) + '</b></span>';
+
+        sel.addEventListener("change", function () {
+          var idx = parseInt(sel.value, 10);
+          if (isNaN(idx) || idx < 1) return;
+          var s = SERVICOS_PRE[idx];
+          if (!s) return;
+          updateItem(it.id, { desc: s.desc || s.nome, unit: Number(s.unit || 0), qtd: clampMin(it.qtd || (s.qtd || 1), 1) });
+        });
+
+        card.appendChild(top);
+        card.appendChild(row2);
+        card.appendChild(meta);
+
+        wrap.appendChild(card);
+      })(state.items[i]);
+    }
+  }
+
+  function recalcAndRender() {
+    recalculateTotal();
+    renderTable();
+    renderCards();
+  }
+
+  // ===== Serviços prontos (select) =====
+  function popularServicosProntos() {
+    var sel = dom.servicoPronto();
+    if (!sel) return;
+    sel.innerHTML = "";
+    for (var i = 0; i < SERVICOS_PRE.length; i++) {
+      var opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = SERVICOS_PRE[i].nome;
+      sel.appendChild(opt);
+    }
+  }
+
+  function adicionarServicoPronto() {
+    var sel = dom.servicoPronto();
+    if (!sel) return;
+    var idx = parseInt(sel.value, 10);
+    var s = SERVICOS_PRE[idx];
+    if (!s || !s.desc) return;
+
+    // preenche form
+    dom.descricao().value = s.desc;
+    dom.quantidade().value = s.qtd || 1;
+    dom.valorUnitario().value = fmtBR(s.unit || 0);
+    dom.descontoServico().value = "0,00";
+
+    // adiciona item
+    addItem({ desc: s.desc, qtd: s.qtd || 1, unit: Number(s.unit || 0), desconto: 0 });
+
+    // abre formulário no mobile
+    var form = dom.addForm();
+    if (form) form.classList.add("open");
+  }
+
+  // ===== Adicionar manual =====
+  function addServicoFromForm() {
+    var desc = String(dom.descricao().value || "").trim();
+    var qtd = parseNum(dom.quantidade().value);
+    var unit = parseNum(dom.valorUnitario().value);
+    var desconto = parseNum(dom.descontoServico().value);
+
+    if (!desc || !qtd || !unit) return;
+
+    addItem({ desc: desc, qtd: qtd, unit: unit, desconto: desconto });
+
+    dom.descricao().value = "";
+    dom.quantidade().value = "";
+    dom.valorUnitario().value = "0,00";
+    dom.descontoServico().value = "0,00";
+  }
+
+  // ===== Tabs =====
+  function initTabs() {
+    var btns = qsa(".tab-btn");
+    if (!btns.length) return;
+
+    var panes = qsa(".tab-pane");
+
+    function activate(id) {
+      btns.forEach(function (b) {
+        if (b.classList && b.classList.toggle) b.classList.toggle("active", b.getAttribute("data-tab") === id);
+      });
+      panes.forEach(function (p) {
+        if (p.classList && p.classList.toggle) p.classList.toggle("active", p.id === id);
+      });
+      if (id === "tab-prontos") {
+        var form = dom.addForm();
+        if (form) form.classList.add("open");
+      }
+    }
+
+    btns.forEach(function (b) {
+      b.addEventListener("click", function () {
+        activate(b.getAttribute("data-tab"));
+      });
+    });
+
+    activate("tab-add");
+  }
+
+  // ===== Share =====
+  function openWhatsAppFallback() {
+    var cliente = (dom.cliente().value || "Cliente");
+    var msg = encodeURIComponent("Olá, " + cliente + "! Segue o orçamento em PDF. (Anexo)");
+    window.open("https://wa.me/?text=" + msg, "_blank");
+  }
+
+  function sharePdf() {
+    if (!state.lastPdfBlob) {
+      alert("Gere o PDF antes de compartilhar.");
+      return;
+    }
+    try {
+      var file = new File([state.lastPdfBlob], state.lastPdfFilename, { type: "application/pdf" });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ title: "Orçamento", text: "Segue o orçamento em PDF.", files: [file] })["catch"](function(){});
+      } else {
+        alert("Seu navegador não suporta compartilhar arquivo direto. Use o WhatsApp e anexe o PDF manualmente.");
+      }
+    } catch (e) {
+      alert("Compartilhamento não disponível neste aparelho. Anexe o PDF manualmente no WhatsApp.");
+    }
+  }
+
+  // ===== PDF =====
+  function loadImageAsDataURL(src) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = function () {
+        var canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        try { resolve(canvas.toDataURL("image/png")); }
+        catch (err) { reject(err); }
+      };
+      img.onerror = reject;
+      img.src = src;
+  func<script>
+/**
+ * RE Orçamento (ES5 compatível p/ iPhone antigo)
+ * - Fonte única: state.items[]
+ * - Serviços prontos com abas
+ * - Máscara de moeda (digita da direita pra esquerda)
+ * - PDF sem assinatura
+ */
+(function () {
+  "use strict";
+
+  var APP_VERSION = "v19c-fix-sintaxe";
+
+  // ===== Config =====
+  var CONFIG = {
+    CURRENCY_PREFIX: "R$",
+    MOBILE_BREAKPOINT: 768,
+    PDF: {
+      margin: 15,
+      lineBlue: [210, 225, 245],
+      boxBlue: [248, 252, 255],
+      logoPath: "logo.png",
+      proposalTitle: "Proposta Comercial"
+    },
+    FILENAME_PREFIX: "Orcamento_"
+  };
+
+  // ✅ EDITE AQUI SUA LISTA DE SERVIÇOS PRONTOS
+  var SERVICOS_PRE = [
+    { nome: "Selecione um serviço...", desc: "", unit: "", qtd: "" },
+
+    { nome: "Higienização Split 9.000 a 12.000 BTUs", desc: "Higienização de ar-condicionado Split (9.000 a 12.000 BTUs)", unit: 180.00, qtd: 1 },
+    { nome: "Higienização Split 18.000 a 24.000 BTUs", desc: "Higienização de ar-condicionado Split (18.000 a 24.000 BTUs)", unit: 200.00, qtd: 1 },
+
+    { nome: "Carga de gás (visita + diagnóstico)", desc: "Visita técnica + diagnóstico para carga de gás", unit: 80.00, qtd: 1 },
+
+    { nome: "Instalação Split até 12.000 BTUs", desc: "Instalação de ar-condicionado Split até 12.000 BTUs", unit: 650.00, qtd: 1 },
+    { nome: "Instalação Split 18.000 a 24.000 BTUs", desc: "Instalação de ar-condicionado Split (18.000 a 24.000 BTUs)", unit: 850.00, qtd: 1 }
+  ];
+
+  // ===== Estado =====
+  var state = {
+    items: [],
+    totalGeral: 0,
+    lastPdfBlob: null,
+    lastPdfFilename: "Orcamento.pdf"
+  };
+
+  // ===== DOM helpers =====
+  function qs(sel, root) {
+    return (root || document).querySelector(sel);
+  }
+  function qsa(sel, root) {
+    return Array.prototype.slice.call((root || document).querySelectorAll(sel));
+  }
+
+  var dom = {
+    cliente: function () { return qs("#cliente"); },
+    telefone: function () { return qs("#telefoneCliente"); },
+    endereco: function () { return qs("#enderecoCliente"); },
+    pagamento: function () { return qs("#pagamento"); },
+    observacoes: function () { return qs("#observacoes"); },
+
+    descricao: function () { return qs("#descricao"); },
+    quantidade: function () { return qs("#quantidade"); },
+    valorUnitario: function () { return qs("#valorUnitario"); },
+    descontoServico: function () { return qs("#descontoServico"); },
+
+    tabelaBody: function () { return qs("#tabela tbody"); },
+    totalSpan: function () { return qs("#total"); },
+    itensCards: function () { return qs("#itensCards"); },
+
+    shareArea: function () { return qs("#shareArea"); },
+    btnShare: function () { return qs("#btnShare"); },
+    btnWhatsAppFallback: function () { return qs("#btnWhatsAppFallback"); },
+
+    btnAddServico: function () { return qs("#btnAddServico"); },
+    btnGerarPDF: function () { return qs("#btnGerarPDF"); },
+
+    servicoPronto: function () { return qs("#servicoPronto"); },
+    btnAplicarServico: function () { return qs("#btnAplicarServico"); },
+
+    btnToggleAdd: function () { return qs("#btnToggleAdd"); },
+    addForm: function () { return qs("#addForm"); }
+  };
+
+  // ===== Boot error (debug) =====
+  function showBootError(msg) {
+    try {
+      var box = document.getElementById("bootError");
+      if (!box) return;
+      box.style.display = "block";
+      if (msg) {
+        box.firstElementChild.innerHTML = "<b>Erro no app.</b> " + String(msg);
+      }
+      var btn = document.getElementById("btnBootReload");
+      if (btn) btn.onclick = function () { location.reload(); };
+    } catch (e) {}
+  }
+
+  // ===== Reset PWA/Cache (para destravar) =====
+  function resetPWA() {
+    try {
+      // remove service workers antigos
+      if (navigator && navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (r) {
+            try { r.unregister(); } catch (e) {}
+          });
+        })["catch"](function(){});
+      }
+
+      // limpa caches antigos
+      if (window.caches && caches.keys) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) {
+            try { caches.delete(k); } catch (e) {}
+          });
+        })["catch"](function(){});
+      }
+    } catch (e) {}
+  }
+
+
+
+
+  // ===== Utils =====
+  function isMobile() {
+    return window.matchMedia && window.matchMedia("(max-width: " + CONFIG.MOBILE_BREAKPOINT + "px)").matches;
+  }
+
+  function safeFilename(name) {
+    var s = String(name || "Cliente").replace(/[\\/:*?"<>|]/g, "").trim();
+    return s || "Cliente";
+  }
+
+  function parseNum(value) {
+    if (typeof value === "number") return value;
+    var s = String((value === null || value === undefined) ? "" : value).trim();
+    if (!s) return 0;
+
+    var x = s.replace(/\s+/g, "");
+    var hasComma = x.indexOf(",") >= 0;
+    var hasDot = x.indexOf(".") >= 0;
+
+    if (hasComma && hasDot) {
+      var lastComma = x.lastIndexOf(",");
+      var lastDot = x.lastIndexOf(".");
+      var decimalSep = (lastComma > lastDot) ? "," : ".";
+      var thousandSep = (decimalSep === ",") ? "." : ",";
+      x = x.split(thousandSep).join("");
+      x = x.replace(decimalSep, ".");
+    } else if (hasComma && !hasDot) {
+      x = x.replace(",", ".");
+    }
+
+    var n = Number(x);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function toFixed2(n) {
+    n = Number(n) || 0;
+    return n.toFixed(2);
+  }
+
+  function fmtBR(n) {
+    try {
+      return Number(n || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } catch (e) {
+      return (Number(n || 0).toFixed(2)).replace(".", ",");
+    }
+  }
+
+  function clampMin(n, min) {
+    n = Number(n);
+    if (isNaN(n)) return min;
+    return Math.max(min, n);
+  }
+
+  function uid() {
+    return (Math.random().toString(36).slice(2, 10) + String(Date.now()).slice(-6));
+  }
+
+  function calcItem(it) {
+    var qtd = parseNum(it.qtd);
+    var unit = parseNum(it.unit);
+    var desconto = parseNum(it.desconto);
+    var total = qtd * unit;
+    var liquido = total - desconto;
+    return { total: total, liquido: liquido };
+  }
+
+  // ===== Máscara moeda (centavos) =====
+  function formatBRLCentsFromDigits(digits) {
+    var d = String(digits || "").replace(/\D+/g, "");
+    var n = d ? parseInt(d, 10) : 0;
+    var value = n / 100;
+    try {
+      return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } catch (e) {
+      return value.toFixed(2).replace(".", ",");
+    }
+  }
+
+  function attachCurrencyMask(inputEl, opts) {
+    if (!inputEl) return;
+    var defaultValue = (opts && opts.defaultValue) ? opts.defaultValue : "0,00";
+
+    function getDigits() {
+      return String(inputEl.value || "").replace(/\D+/g, "");
+    }
+    function setFromDigits(d) {
+      inputEl.value = formatBRLCentsFromDigits(d);
+      // cursor no fim
+      try {
+        var len = inputEl.value.length;
+        inputEl.setSelectionRange(len, len);
+      } catch (e) {}
+    }
+
+    if (!inputEl.value) inputEl.value = defaultValue;
+
+    inputEl.addEventListener("focus", function () {
+      if (!inputEl.value) inputEl.value = defaultValue;
+      setFromDigits(getDigits());
+    });
+
+    inputEl.addEventListener("input", function () {
+      setFromDigits(getDigits());
+    });
+
+    inputEl.addEventListener("keydown", function (e) {
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        var digits = getDigits();
+        setFromDigits(digits.slice(0, -1));
+        return;
+      }
+      if (e.key && e.key.length === 1 && !/[0-9]/.test(e.key)) {
+        if (e.key !== "," && e.key !== ".") e.preventDefault();
+      }
   // ===== CRUD items =====
   function addItem(payload) {
     var it = {
@@ -1077,18 +1252,14 @@
       // sem logo
       state.lastPdfFilename = CONFIG.FILENAME_PREFIX + safeFilename(dom.cliente().value) + ".pdf";
       alert("Não foi possível carregar o logo. O PDF será gerado sem logo.");
-    });
-  }
-
   // ===== Mobile UX (sem resize) =====
   function initMobileAddToggle() {
-  var form = dom.addForm();
-  if (form && !isMobile()) form.classList.add("open");
-}
-
+    var form = dom.addForm();
+    if (form && !isMobile()) form.classList.add("open");
+  }
   // ===== PWA =====
   function initPWA() {
-    // DESATIVADO (site normal durante desenvolvimento)
+    // PWA/Service Worker DESATIVADO (site normal)
   }
 
   // ===== Init =====
@@ -1127,7 +1298,29 @@
 
     el = dom.servicoPronto();
     if (el) el.addEventListener("change", function () { });
-  
+  }
+    });
+
+    // Botão interno: adiciona serviço manualmente
+    el = dom.btnAddServico();
+    if (el) el.addEventListener("click", addServicoFromForm);
+
+    el = dom.btnShare();
+    if (el) el.addEventListener("click", sharePdf);
+
+    el = dom.btnWhatsAppFallback();
+    if (el) el.addEventListener("click", openWhatsAppFallback);
+
+    el = dom.btnGerarPDF();
+    if (el) el.addEventListener("click", gerarPdf);
+
+    el = dom.btnAplicarServico();
+    if (el) el.addEventListener("click", adicionarServicoPronto);
+
+    el = dom.servicoPronto();
+    if (el) el.addEventListener("change", function () { });
+
+  }
 
   function init() {
     popularServicosProntos();
@@ -1149,13 +1342,224 @@
   }
 })();
 </script>
+    if (state.totalGeral === 0) {
+      alert("Adicione pelo menos um serviço.");
+      return;
+    }
 
-<div id="bootError">
-  <div><b>Erro no app.</b> Abra o console no PC (F12) para ver detalhes.</div>
-  <div class="small">Versão carregada: v19-fix-botoes</div>
-  <button type="button" id="btnBootReload">Recarregar</button>
-</div>
-</body>
+    var jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null;
+    if (!jsPDF) {
+      alert("jsPDF não carregou.");
+      return;
+    }
 
-</html>
+    var doc = new jsPDF();
+    var pageW = doc.internal.pageSize.getWidth();
+    var margin = CONFIG.PDF.margin;
+    var centerX = pageW / 2;
 
+    var cliente = dom.cliente().value;
+    var telefone = dom.telefone().value;
+    var endereco = dom.endereco().value;
+    var pagamento = dom.pagamento().value;
+    var obs = dom.observacoes().value;
+    var data = (new Date()).toLocaleDateString();
+
+    loadImageAsDataURL(CONFIG.PDF.logoPath).then(function (logoDataUrl) {
+      if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 15, 8, 100, 40);
+
+      var lineY = 52;
+      var propostaY = 49;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(0, 0, 0);
+      doc.text(CONFIG.PDF.proposalTitle, centerX, propostaY, { align: "center" });
+
+      doc.setDrawColor(CONFIG.PDF.lineBlue[0], CONFIG.PDF.lineBlue[1], CONFIG.PDF.lineBlue[2]);
+      doc.setLineWidth(1);
+      doc.line(margin, lineY, pageW - margin, lineY);
+
+      var y = 65;
+      doc.setFillColor(CONFIG.PDF.boxBlue[0], CONFIG.PDF.boxBlue[1], CONFIG.PDF.boxBlue[2]);
+      doc.roundedRect(12, y - 7, pageW - 24, 22, 3, 3, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Cliente:", margin, y);
+
+      doc.setFont("helvetica", "normal");
+      doc.text(cliente || "-", margin + 25, y);
+
+      y += 7;
+      doc.setTextColor(90, 90, 90);
+      doc.text("Telefone: " + (telefone || "-"), margin, y);
+
+      y += 7;
+      doc.text("Endereço: " + (endereco || "-"), margin, y);
+
+      y += 12;
+
+      if (!doc.autoTable) {
+        alert("autoTable não carregou.");
+        return;
+      }
+
+      doc.autoTable({
+        startY: y,
+        head: [["Descrição", "Qtd", "Unit", "Total", "Desc", "Líquido"]],
+        body: getBodyForPdf(),
+        theme: "plain",
+        styles: { fontSize: 10, cellPadding: 3 },
+        didDrawCell: function (dataCell) {
+          if (dataCell.section === "head" || dataCell.section === "body") {
+            doc.setDrawColor(210, 210, 210);
+            doc.setLineWidth(0.5);
+            doc.line(dataCell.cell.x, dataCell.cell.y + dataCell.cell.height, dataCell.cell.x + dataCell.cell.width, dataCell.cell.y + dataCell.cell.height);
+          }
+        },
+        columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" } }
+      });
+
+      y = doc.lastAutoTable.finalY + 10;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Total Geral: " + CONFIG.CURRENCY_PREFIX + " " + toFixed2(state.totalGeral), pageW - margin, y, { align: "right" });
+      y += 10;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(0, 0, 0);
+
+      var label = "Forma de Pagamento:";
+      doc.text(label, margin, y);
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(90, 90, 90);
+      doc.text(pagamento || "-", margin + doc.getTextWidth(label) + 4, y);
+      y += 12;
+
+      if (obs) {
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0, 0, 0);
+        doc.text("Observações:", margin, y);
+        y += 6;
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(90, 90, 90);
+        var linhas = doc.splitTextToSize(obs, pageW - (margin * 2));
+        doc.text(linhas, margin, y);
+        y += (linhas.length * 5) + 10;
+      } else {
+        y += 6;
+      }
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(90, 90, 90);
+      doc.text("Data: " + data, margin, y);
+
+      // assinatura removida (pedido)
+      state.lastPdfFilename = CONFIG.FILENAME_PREFIX + safeFilename(cliente) + ".pdf";
+      state.lastPdfBlob = doc.output("blob");
+
+      doc.save(state.lastPdfFilename);
+      var sa = dom.shareArea();
+      if (sa) sa.style.display = "block";
+    })["catch"](function () {
+      // sem logo
+      state.lastPdfFilename = CONFIG.FILENAME_PREFIX + safeFilename(dom.cliente().value) + ".pdf";
+      alert("Não foi possível carregar o logo. O PDF será gerado sem logo.");
+  // ===== Mobile UX (sem resize) =====
+  function initMobileAddToggle() {
+    var form = dom.addForm();
+    if (form && !isMobile()) form.classList.add("open");
+  }
+  // ===== PWA =====
+  function initPWA() {
+    // PWA/Service Worker DESATIVADO durante desenvolvimento (site normal).
+  }
+
+  // ===== Init =====
+  function bindEvents() {
+    var el;
+
+    // Botão superior: abre/fecha formulário
+    el = dom.btnToggleAdd();
+    if (el) el.addEventListener("click", function () {
+      var form = dom.addForm();
+      if (!form) return;
+
+      form.classList.toggle("open");
+      if (form.classList.contains("open")) {
+        var d = dom.descricao();
+        try { if (d) d.focus(); } catch (e) {}
+        try { form.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e2) {}
+      }
+    });
+
+    // Botão interno: adiciona serviço manualmente
+    el = dom.btnAddServico();
+    if (el) el.addEventListener("click", addServicoFromForm);
+
+    el = dom.btnShare();
+    if (el) el.addEventListener("click", sharePdf);
+
+    el = dom.btnWhatsAppFallback();
+    if (el) el.addEventListener("click", openWhatsAppFallback);
+
+    el = dom.btnGerarPDF();
+    if (el) el.addEventListener("click", gerarPdf);
+
+    el = dom.btnAplicarServico();
+    if (el) el.addEventListener("click", adicionarServicoPronto);
+
+    el = dom.servicoPronto();
+    if (el) el.addEventListener("change", function () { });
+  }
+    });
+
+    // Botão interno: adiciona serviço manualmente
+    el = dom.btnAddServico();
+    if (el) el.addEventListener("click", addServicoFromForm);
+
+    el = dom.btnShare();
+    if (el) el.addEventListener("click", sharePdf);
+
+    el = dom.btnWhatsAppFallback();
+    if (el) el.addEventListener("click", openWhatsAppFallback);
+
+    el = dom.btnGerarPDF();
+    if (el) el.addEventListener("click", gerarPdf);
+
+    el = dom.btnAplicarServico();
+    if (el) el.addEventListener("click", adicionarServicoPronto);
+
+    el = dom.servicoPronto();
+    if (el) el.addEventListener("change", function () { });
+
+
+
+  function init() {
+    popularServicosProntos();
+    initTabs();
+    bindEvents();
+    initMobileAddToggle();
+    attachCurrencyMask(dom.valorUnitario(), { defaultValue: "0,00" });
+    attachCurrencyMask(dom.descontoServico(), { defaultValue: "0,00" });
+    initPWA();
+    recalcAndRender();
+  }
+  try {
+    try { console.log("APP", APP_VERSION); } catch(e) {}
+    resetPWA();
+    init();
+  } catch (err) {
+    try { console.error(err); } catch(e2) {}
+    showBootError(err && err.message ? err.message : "Falha na inicialização");
+  }
+})();
+</script>
