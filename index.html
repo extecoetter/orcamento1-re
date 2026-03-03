@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>RE Climatização - Orçamento</title>
+<title>RE1 Climatização - Orçamento</title>
 <!-- PWA -->
 <link href="manifest.webmanifest" rel="manifest"/>
 <meta content="#0077cc" name="theme-color"/>
@@ -290,7 +290,7 @@
 <div class="container">
 <div class="card">
 <div class="title-pill">Proposta Comercial</div>
-<div class="app-version">Versão: v18B-dois-botoes-safe</div>
+<div class="app-version">Versão: v18B-site-sem-pwa</div>
 <label>Cliente</label>
 <input id="cliente" type="text"/>
 <div class="row">
@@ -388,7 +388,7 @@
 (function () {
   "use strict";
 
-  var APP_VERSION = "v18B-dois-botoes-safe";
+  var APP_VERSION = "v18B-site-sem-pwa";
 
   // ===== Config =====
   var CONFIG = {
@@ -1091,7 +1091,7 @@
 
   // ===== PWA =====
   function initPWA() {
-    // DESATIVADO nesta versão segura (evita cache travado no iPhone durante ajustes)
+    // PWA/Service Worker DESATIVADO durante desenvolvimento (site normal).
   }
 
   // ===== Init =====
@@ -1156,7 +1156,7 @@
 
 <div id="bootError">
   <div><b>Erro no app.</b> Abra o console no PC (F12) para ver detalhes.</div>
-  <div class="small">Versão carregada: v18B-dois-botoes-safe</div>
+  <div class="small">Versão carregada: v18B-site-sem-pwa</div>
   <button type="button" id="btnBootReload">Recarregar</button>
 </div>
 </body>
