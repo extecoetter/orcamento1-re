@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var APP_VERSION = "v24-clean";
+  var APP_VERSION = "v25-fixes-logo-moeda-layout";
 
   function qs(sel, root) { return (root || document).querySelector(sel); }
   function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
@@ -38,8 +38,7 @@
     { nome: "Teste de estanqueidade com Nitrogenio", desc: "Teste de estanqueidade com Nitrogenio", qtd: 1 },
     { nome: "Aplicaçao de Vacuo no Sistema", desc: "Aplicaçao de Vacuo no Sistema", qtd: 1 },
     { nome: "Recarga de gás + teste de pressão", desc: "Recarga de gás + teste de pressão", qtd: 1 },
-    { nome: "Reparo em Componente Eletronico", desc: "Reparo em Componente Eletronico", qtd: 1 },
-    
+    { nome: "Reparo em Componente Eletronico", desc: "Reparo em Componente Eletronico", qtd: 1 }
   ];
 
   var dom = {
@@ -52,7 +51,6 @@
     servicoPronto: function(){ return qs("#servicoPronto"); },
     btnAplicarServico: function(){ return qs("#btnAplicarServico"); },
 
-    btnToggleAdd: function(){ return qs("#btnToggleAdd"); },
     addForm: function(){ return qs("#addForm"); },
 
     descricao: function(){ return qs("#descricao"); },
@@ -117,16 +115,75 @@
   function attachCurrencyMask(el, opts){
     if (!el) return;
     var def = (opts && opts.defaultValue) ? opts.defaultValue : "0,00";
-    if (!el.value) el.value = def;
+    var digits = "";
+
+    function setFromDigits(d){
+      digits = onlyDigits(d);
+      if (!digits) digits = "0";
+      el.value = formatMoedaFromDigits(digits);
+      try { el.setAttribute("data-digits", digits); } catch(e){}
+    }
+
+    // inicia
+    setFromDigits(el.value || def);
+
+    el.addEventListener("keydown", function(ev){
+      ev = ev || window.event;
+      var k = ev.key;
+
+      if (k === "Tab" || k === "ArrowLeft" || k === "ArrowRight" || k === "Home" || k === "End") return;
+
+      if (k === "Backspace") {
+        if (ev.preventDefault) ev.preventDefault();
+        else ev.returnValue = false;
+
+        digits = onlyDigits(el.getAttribute("data-digits") || digits);
+        digits = digits.slice(0, -1);
+        if (!digits) digits = "0";
+        setFromDigits(digits);
+        return;
+      }
+
+      if (k === "Delete") {
+        if (ev.preventDefault) ev.preventDefault();
+        else ev.returnValue = false;
+        setFromDigits("0");
+        return;
+      }
+
+      if (k && k.length === 1 && k >= "0" && k <= "9") {
+        if (ev.preventDefault) ev.preventDefault();
+        else ev.returnValue = false;
+
+        digits = onlyDigits(el.getAttribute("data-digits") || digits);
+        if (digits === "0") digits = "";
+        digits += k;
+        setFromDigits(digits);
+        return;
+      }
+
+      if (ev.preventDefault) ev.preventDefault();
+      else ev.returnValue = false;
+    });
+
+    el.addEventListener("paste", function(ev){
+      ev = ev || window.event;
+      if (ev.preventDefault) ev.preventDefault();
+      var text = "";
+      try { text = (ev.clipboardData || window.clipboardData).getData("text"); } catch(e){}
+      setFromDigits(text);
+    });
 
     el.addEventListener("focus", function(){
-      if (!el.value) el.value = def;
+      if (!el.value) setFromDigits(def);
+      try { el.select(); } catch(e){}
     });
 
     el.addEventListener("input", function(){
-      el.value = formatMoedaFromDigits(el.value);
+      setFromDigits(el.value);
     });
   }
+
 
   function recalcTotal(){
     var total = 0;
@@ -250,99 +307,104 @@
 
     try { dom.valorUnitario().focus(); } catch(e) {}
   }
-
-  function toggleForm(){
-    var form = dom.addForm();
-    if (!form) return;
-    if (!isMobile()) return;
-    form.classList.toggle("open");
-    if (form.classList.contains("open")) {
-      try { dom.descricao().focus(); } catch(e) {}
-      try { form.scrollIntoView({ behavior:"smooth", block:"start" }); } catch(e2) {}
-    }
   }
 
   function gerarPdf(){
     if (!state.items.length) { alert("Adicione pelo menos um serviço."); return; }
     if (!(window.jspdf && window.jspdf.jsPDF)) { alert("jsPDF não carregou."); return; }
 
-    var jsPDF = window.jspdf.jsPDF;
-    var doc = new jsPDF({ unit:"mm", format:"a4" });
-    var margin = 15;
-    var pageW = doc.internal.pageSize.getWidth();
-    var y = 18;
+    var logoEl = document.getElementById("logoPdf");
 
-    doc.setFont("helvetica","bold");
-    doc.setFontSize(16);
-    doc.setTextColor(0, 119, 204);
-    doc.text("PROPOSTA COMERCIAL", margin, y);
-    y += 10;
+    loadImageAsDataURL(logoEl, function(logoData){
+      try {
+        var jsPDF = window.jspdf.jsPDF;
+        var doc = new jsPDF({ unit:"mm", format:"a4" });
+        var margin = 15;
+        var pageW = doc.internal.pageSize.getWidth();
+        var y = 18;
 
-    doc.setFont("helvetica","normal");
-    doc.setFontSize(11);
-    doc.setTextColor(40, 40, 40);
+        if (logoData) {
+          try {
+            doc.addImage(logoData, "PNG", margin, 10, 30, 30);
+            y = 46;
+          } catch(eImg) {}
+        }
 
-    var cliente = (dom.cliente().value || "").trim();
-    var tel = (dom.telefone().value || "").trim();
-    var end = (dom.endereco().value || "").trim();
-    var pag = (dom.pagamento().value || "").trim();
-    var obs = (dom.observacoes().value || "").trim();
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(16);
+        doc.setTextColor(0, 119, 204);
+        doc.text("PROPOSTA COMERCIAL", margin, y);
+        y += 10;
 
-    if (cliente) { doc.text("Cliente: " + cliente, margin, y); y += 6; }
-    if (tel) { doc.text("Telefone: " + tel, margin, y); y += 6; }
-    if (end) { doc.text("Endereço: " + end, margin, y); y += 6; }
-    if (pag) { doc.text("Pagamento: " + pag, margin, y); y += 6; }
-    y += 4;
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(11);
+        doc.setTextColor(40, 40, 40);
 
-    var head = [["Descrição", "Qtd", "Unit (R$)", "Desc (R$)", "Líquido (R$)"]];
-    var body = [];
-    for (var i=0;i<state.items.length;i++){
-      var it = state.items[i];
-      var bruto = it.qtd * it.unit;
-      var liquido = bruto - it.desconto;
-      if (liquido < 0) liquido = 0;
-      body.push([ it.desc, String(it.qtd), fmtBR(it.unit), fmtBR(it.desconto), fmtBR(liquido) ]);
-    }
+        var cliente = (dom.cliente().value || "").trim();
+        var tel = (dom.telefone().value || "").trim();
+        var end = (dom.endereco().value || "").trim();
+        var pag = (dom.pagamento().value || "").trim();
+        var obs = (dom.observacoes().value || "").trim();
 
-    try {
-      doc.autoTable({
-        startY: y,
-        head: head,
-        body: body,
-        styles: { font: "helvetica", fontSize: 10 },
-        headStyles: { fillColor: [210,225,245], textColor: 20 },
-        margin: { left: margin, right: margin }
-      });
-      y = doc.lastAutoTable.finalY + 8;
-    } catch(e){
-      doc.text("Itens:", margin, y); y += 6;
-      for (var j=0;j<body.length;j++){
-        doc.text("- " + body[j][0] + " (Qtd " + body[j][1] + ")", margin, y);
-        y += 6;
+        if (cliente) { doc.text("Cliente: " + cliente, margin, y); y += 6; }
+        if (tel) { doc.text("Telefone: " + tel, margin, y); y += 6; }
+        if (end) { doc.text("Endereço: " + end, margin, y); y += 6; }
+        if (pag) { doc.text("Pagamento: " + pag, margin, y); y += 6; }
+        y += 4;
+
+        var head = [["Descrição", "Qtd", "Unit (R$)", "Desc (R$)", "Líquido (R$)"]];
+        var body = [];
+        for (var i=0;i<state.items.length;i++){
+          var it = state.items[i];
+          var bruto = it.qtd * it.unit;
+          var liquido = bruto - it.desconto;
+          if (liquido < 0) liquido = 0;
+          body.push([ it.desc, String(it.qtd), fmtBR(it.unit), fmtBR(it.desconto), fmtBR(liquido) ]);
+        }
+
+        try {
+          doc.autoTable({
+            startY: y,
+            head: head,
+            body: body,
+            styles: { font: "helvetica", fontSize: 10 },
+            headStyles: { fillColor: [210,225,245], textColor: 20 },
+            margin: { left: margin, right: margin }
+          });
+          y = doc.lastAutoTable.finalY + 8;
+        } catch(e){
+          doc.text("Itens:", margin, y); y += 6;
+          for (var j=0;j<body.length;j++){
+            doc.text("- " + body[j][0] + " (Qtd " + body[j][1] + ")", margin, y);
+            y += 6;
+          }
+        }
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(12);
+        doc.text("Total: R$ " + fmtBR(state.totalGeral), margin, y);
+        y += 8;
+
+        if (obs) {
+          doc.setFont("helvetica","normal");
+          doc.setFontSize(10);
+          doc.setTextColor(90,90,90);
+          var linhas = doc.splitTextToSize("Obs: " + obs, pageW - (margin*2));
+          doc.text(linhas, margin, y);
+        }
+
+        var nomeArq = "Orcamento_" + (cliente ? cliente.replace(/[^\w\-]+/g,"_") : "Cliente") + ".pdf";
+        state.lastPdfFilename = nomeArq;
+        try { state.lastPdfBlob = doc.output("blob"); } catch(e2) { state.lastPdfBlob = null; }
+
+        doc.save(nomeArq);
+
+        var sa = dom.shareArea();
+        if (sa) sa.style.display = "block";
+      } catch(err) {
+        showBootError(err);
       }
-    }
-
-    doc.setFont("helvetica","bold");
-    doc.setFontSize(12);
-    doc.text("Total: R$ " + fmtBR(state.totalGeral), margin, y);
-    y += 8;
-
-    if (obs) {
-      doc.setFont("helvetica","normal");
-      doc.setFontSize(10);
-      doc.setTextColor(90,90,90);
-      var linhas = doc.splitTextToSize("Obs: " + obs, pageW - (margin*2));
-      doc.text(linhas, margin, y);
-    }
-
-    var nomeArq = "Orcamento_" + (cliente ? cliente.replace(/[^\w\-]+/g,"_") : "Cliente") + ".pdf";
-    state.lastPdfFilename = nomeArq;
-    try { state.lastPdfBlob = doc.output("blob"); } catch(e2) { state.lastPdfBlob = null; }
-
-    doc.save(nomeArq);
-
-    var sa = dom.shareArea();
-    if (sa) sa.style.display = "block";
+    });
   }
 
   function sharePdf(){
@@ -379,16 +441,13 @@
   function initMobileDefaults(){
     var form = dom.addForm();
     if (!form) return;
-    if (!isMobile()) form.classList.add("open");
+    // Form sempre visível
+    form.classList.add("open");
   }
 
   function bindEvents(){
     var el;
-
-    el = dom.btnToggleAdd();
-    if (el) el.addEventListener("click", toggleForm);
-
-    el = dom.btnAddServico();
+el = dom.btnAddServico();
     if (el) el.addEventListener("click", addServicoFromForm);
 
     el = dom.btnAplicarServico();
@@ -417,7 +476,7 @@
 
   function init(){
     try { if (dom.appVersion()) dom.appVersion().textContent = APP_VERSION; } catch(e) {}
-    try { if (dom.jsStatus()) dom.jsStatus().textContent = "JS: OK"; } catch(e2) {}
+    try { if (dom.jsStatus()) dom.jsStatus().textContent = "JS: OK (v25-fixes-logo-moeda-layout)"; } catch(e2) {}
 
     popularServicosProntos();
     initMobileDefaults();
