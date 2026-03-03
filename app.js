@@ -3,10 +3,10 @@
 
   // Sinal para o loader: este script EXECUTOU
   try { window.__APP_EXECUTED__ = true; } catch(e) {}
-  try { var _st = document.getElementById("jsStatus"); if (_st) _st.textContent = "JS: executando... (v27-exec-check)"; } catch(e2) {}
+  try { var _st = document.getElementById("jsStatus"); if (_st) _st.textContent = "JS: executando... (v28-syntax-ok)"; } catch(e2) {}
 
 
-  var APP_VERSION = "v27-exec-check";
+  var APP_VERSION = "v28-syntax-ok";
 
   function qs(sel, root) { return (root || document).querySelector(sel); }
   function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
@@ -308,7 +308,6 @@
 
     try { dom.valorUnitario().focus(); } catch(e) {}
   }
-  }
 
   function gerarPdf(){
     if (!state.items.length) { alert("Adicione pelo menos um serviço."); return; }
@@ -477,7 +476,7 @@ el = dom.btnAddServico();
 
   function init(){
     try { if (dom.appVersion()) dom.appVersion().textContent = APP_VERSION; } catch(e) {}
-    try { if (dom.jsStatus()) dom.jsStatus().textContent = "JS: OK (v27-exec-check)"; } catch(e2) {}
+    try { if (dom.jsStatus()) dom.jsStatus().textContent = "JS: OK (v28-syntax-ok)"; } catch(e2) {}
 
     popularServicosProntos();
     initMobileDefaults();
