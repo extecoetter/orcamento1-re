@@ -678,6 +678,9 @@
 
     // Normaliza o logo (permite config.logo = "logo.png")
     INSTALLER.logo = resolveClientAsset(INSTALLER.logo || "logo.png");
+    let INSTALLER_LOGO_DATA = null;
+    // tenta embutir o logo como base64 (mais confiável no print/PDF)
+    INSTALLER_LOGO_DATA = await inlineImageToDataURL(INSTALLER.logo);
 
     // ====== CÓDIGO ORIGINAL ======
     const brl = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
@@ -883,9 +886,31 @@
       });
     }
 
+    async function inlineImageToDataURL(url){
+      try{
+        const res = await fetch(url, { cache: "force-cache" });
+        if(!res.ok) throw new Error("fetch failed: " + res.status);
+        const blob = await res.blob();
+        return await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      }catch(e){
+        return null; // fallback para URL normal
+      }
+    }
+
 function fillPDF(){
       const logoEl = document.getElementById('pdfLogo');
-      if(logoEl && INSTALLER && INSTALLER.logo) logoEl.src = INSTALLER.logo;
+      if(logoEl){
+        // reexibe caso um erro anterior tenha escondido
+        logoEl.style.display = 'block';
+        const srcLogo = (typeof INSTALLER_LOGO_DATA === 'string' && INSTALLER_LOGO_DATA.startsWith('data:'))
+          ? INSTALLER_LOGO_DATA
+          : (INSTALLER && INSTALLER.logo ? INSTALLER.logo : '');
+        if(srcLogo) logoEl.src = srcLogo;
+      }
 
       const nomeInst = (INSTALLER && INSTALLER.nome) ? INSTALLER.nome : "";
       const whatsInst = (INSTALLER && INSTALLER.whats) ? INSTALLER.whats : "";
@@ -963,7 +988,7 @@ function fillPDF(){
       fillPDF();
       // Aguarda o logo carregar antes do print (evita sair branco no topo)
       const logoEl = document.getElementById('pdfLogo');
-      await waitImageLoaded(logoEl, 3000);
+      await waitImageLoaded(logoEl, 5000);
       window.print();
     });
 document.getElementById('btnLimpar').addEventListener('click', () => {
