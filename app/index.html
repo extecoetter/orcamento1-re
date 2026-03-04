@@ -473,14 +473,27 @@
     .pdf .datebox .validadeLine{ font-size: 11px !important; }
     .pdf .pdfTitleCenter{ color:#0b1220 !important; }
     .pdf .gapTel{ display:inline-block; width:18px; }
-  </style>
+  
+    .ver{
+      display:inline-block;
+      margin-left:8px;
+      font-weight:900;
+      font-size:12px;
+      background: rgba(255,255,255,.18);
+      border:1px solid rgba(255,255,255,.25);
+      padding:4px 10px;
+      border-radius: 999px;
+      vertical-align: middle;
+    }
+
+</style>
 </head>
 
 <body>
   <div class="wrap">
     <div class="appbar">
       <h1>Proposta Comercial - Climatização</h1>
-      <p>Adicione serviços e gere o PDF.</p>
+      <p>Adicione serviços e gere o PDF. <span class="ver" id="appVer">BETA 0.1.11</span></p>
     </div>
 
     <div class="section-title">👤 DADOS DO ORÇAMENTO</div>
@@ -687,6 +700,7 @@
     INSTALLER_LOGO_DATA = await inlineImageToDataURL(INSTALLER.logo);
 
     // ====== CÓDIGO ORIGINAL ======
+    const APP_VERSION = 'BETA 0.1.11';
     const brl = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
 
     // === PDF REAL (jsPDF + html2canvas) ===
@@ -1062,32 +1076,30 @@ function fillPDF(){
     }
 
     document.getElementById('btnAdd').addEventListener('click', addItem);
-    document.getElementById("btnPdf").addEventListener("click", async () => {
-      try {
+    document.getElementById('btnPdf').addEventListener('click', async () => {
+      try{
         const blob = await gerarPdfRealBlob();
         const file = new File([blob], "proposta.pdf", { type: "application/pdf" });
 
-        // 1) Compartilhar direto (melhor UX no Android/PWA)
+        // 1) Compartilhar direto (melhor no Android/PWA)
         if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
           await navigator.share({
             title: "Proposta Comercial",
             text: "Segue a proposta em PDF.",
-            files: [file],
+            files: [file]
           });
           return;
         }
 
-        // 2) Fallback: abre o PDF em nova aba para o usuário compartilhar/salvar pelo visualizador
+        // 2) Fallback: abre o PDF em nova aba
         const url = URL.createObjectURL(blob);
         window.open(url, "_blank");
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      } catch (e) {
+      }catch(e){
         alert("Erro ao gerar/compartilhar PDF: " + (e?.message || e));
       }
     });
-const file = new File([blob], "proposta.pdf", { type: "application/pdf" });
-
-        // Abre o PDF para visualizar imediatamente
+// Abre o PDF para visualizar imediatamente
         const url = URL.createObjectURL(blob);
         window.open(url, "_blank");
 
@@ -1114,6 +1126,9 @@ document.getElementById('btnLimpar').addEventListener('click', () => {
       document.getElementById('obs').value = "";
       document.getElementById('pagamento').value = "";
       document.getElementById('data').value = todayISO();
+    const verEl = document.getElementById('appVer');
+    if(verEl) verEl.textContent = APP_VERSION;
+
       const vEl = document.getElementById('validade'); if(vEl && !vEl.value) vEl.value = "7 dias";
       recalc();
     });
