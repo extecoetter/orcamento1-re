@@ -738,14 +738,12 @@
     async function gerarPdfRealBlob(){
       fillPDF();
 
-      // garante que o DOM do PDF atualizou (cliente/endereço/logo)
+      // garante que o DOM do PDF atualizou antes de capturar
       await new Promise(requestAnimationFrame);
       await new Promise(requestAnimationFrame);
-
-      // espera o logo carregar antes de capturar (evita sair branco)
       await waitImageLoaded(document.getElementById("pdfLogo"), 4000);
 
-      const pdfEl = document.getElementById("pdf");
+const pdfEl = document.getElementById("pdf");
       const canvas = await captureElementToCanvas(pdfEl);
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
@@ -768,10 +766,6 @@
           remaining -= pageH;
           y += pageH;
           if(remaining > 0) doc.addPage();
-        }
-      }
-      return doc.output("blob");
-
         }
       }
       return doc.output("blob");
