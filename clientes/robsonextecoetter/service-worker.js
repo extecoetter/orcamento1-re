@@ -1,37 +1,78 @@
 const SLUG = "robsonextecoetter";
-const VERSION = "v13";
+const APP_V = "0.1.11";          // versão do app (querystring)
+const SW_V  = "v13";             // versão do service worker (mude sempre que atualizar)
 
-const CACHE = `orcamento-${robsonextecoetter}-${v13}`;
+const CACHE = `orcamento-${SLUG}-${SW_V}`;
+
+const APP_ENTRY = `../../app/index.html?c=${SLUG}&v=${APP_V}`;
 
 const CORE = [
   "./",
   "./index.html",
   "./manifest.json",
-  "../../app/index.html?c=" + robsonextecoetter + "&v=12",
   "./config.js",
-  "./logo.png"
+  "./logo.png",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+
+  // app compartilhado (sempre versionado!)
+  APP_ENTRY,
+
+  // libs locais do PDF (offline)
+  "../../app/assets/libs/html2canvas.min.js",
+  "../../app/assets/libs/jspdf.umd.min.js"
 ];
 
-self.addEventListener("install", e=>{
+self.addEventListener("install", (e) => {
   e.waitUntil(
     caches.open(CACHE)
-      .then(c=>c.addAll(CORE))
-      .then(()=>self.skipWaiting())
+      .then((c) => c.addAll(CORE))
+      .then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener("activate", e=>{
+self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then(keys=>{
-      return Promise.all(
-        keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))
-      );
-    }).then(()=>self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
-self.addEventListener("fetch", e=>{
+self.addEventListener("fetch", (e) => {
+  const req = e.request;
+  const url = new URL(req.url);
+
+  // 1) Navegação (abrir /clientes/robsonextecoetter/):
+  // tenta rede, se falhar usa cache do index do cliente
+  if (req.mode === "navigate") {
+    e.respondWith(fetch(req).catch(() => caches.match("./index.html")));
+    return;
+  }
+
+  // 2) app/index.html (o coração do app): NETWORK-FIRST pra não misturar versões
+  if (url.href.includes("/app/index.html")) {
+    e.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // 3) resto (config/logo/icons/libs): CACHE-FIRST
   e.respondWith(
-    caches.match(e.request).then(r=>r || fetch(e.request))
+    caches.match(req).then((cached) => {
+      if (cached) return cached;
+      return fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      });
+    })
   );
 });
