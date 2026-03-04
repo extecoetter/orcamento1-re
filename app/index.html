@@ -555,7 +555,7 @@
   <section class="pdf" id="pdf">
     <div class="top">
       <div class="logoRow">
-        <img id="pdfLogo" src="" alt="logo" onerror="this.style.display='none'"/>
+        <img id="pdfLogo" src="" alt="logo" crossorigin="anonymous" onerror="this.style.display='none'"/>
       </div>
 
       <div class="headRow">
@@ -855,7 +855,35 @@
         .replaceAll("'","&#039;");
     }
 
-    function fillPDF(){
+    
+    function waitImageLoaded(imgEl, timeoutMs = 2500){
+      return new Promise((resolve) => {
+        if(!imgEl) return resolve();
+        // If already loaded successfully
+        if(imgEl.complete && imgEl.naturalWidth > 0) return resolve();
+        let settled = false;
+
+        const done = () => {
+          if(settled) return;
+          settled = true;
+          cleanup();
+          resolve();
+        };
+
+        const cleanup = () => {
+          try{ imgEl.removeEventListener("load", done); }catch(e){}
+          try{ imgEl.removeEventListener("error", done); }catch(e){}
+          if(timer) clearTimeout(timer);
+        };
+
+        imgEl.addEventListener("load", done, { once: true });
+        imgEl.addEventListener("error", done, { once: true });
+
+        const timer = setTimeout(done, timeoutMs);
+      });
+    }
+
+function fillPDF(){
       const logoEl = document.getElementById('pdfLogo');
       if(logoEl && INSTALLER && INSTALLER.logo) logoEl.src = INSTALLER.logo;
 
@@ -931,12 +959,14 @@
     }
 
     document.getElementById('btnAdd').addEventListener('click', addItem);
-    document.getElementById('btnPdf').addEventListener('click', () => {
+    document.getElementById('btnPdf').addEventListener('click', async () => {
       fillPDF();
+      // Aguarda o logo carregar antes do print (evita sair branco no topo)
+      const logoEl = document.getElementById('pdfLogo');
+      await waitImageLoaded(logoEl, 3000);
       window.print();
     });
-
-    document.getElementById('btnLimpar').addEventListener('click', () => {
+document.getElementById('btnLimpar').addEventListener('click', () => {
       state.items = [];
       renderItems();
       document.getElementById('cliente').value = "";
