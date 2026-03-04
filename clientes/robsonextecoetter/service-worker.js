@@ -1,13 +1,13 @@
 const SLUG = "robsonextecoetter";
-const VERSION = "v12";
+const VERSION = "v13";
 
-const CACHE = `orcamento-${SLUG}-${VERSION}`;
+const CACHE = `orcamento-${robsonextecoetter}-${v13}`;
 
 const CORE = [
   "./",
   "./index.html",
   "./manifest.json",
-  "../../app/index.html?c=" + SLUG + "&v=12",
+  "../../app/index.html?c=" + robsonextecoetter + "&v=12",
   "./config.js",
   "./logo.png"
 ];
