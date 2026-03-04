@@ -1,11 +1,33 @@
 <!doctype html>
+
+<!-- =========================================================
+     ORÇAMENTO CLIMATIZAÇÃO — BETA
+     Arquivo: index.html (único)
+     Versão: BETA 0.1.10
+     Regras:
+     - Mudanças devem ser "cirúrgicas"
+     - Evitar mexer em layout do PDF sem necessidade
+     - Patch iPhone: não usar crypto.randomUUID direto
+     - Badge/debug NÃO devem ir para o PDF (print)
+   ========================================================= -->
+
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Proposta Comercial - Climatização</title>
 
-  <style>
+  
+<!-- PWA (BETA 0.1.x) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f6feb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Orçamento Climatização">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<!-- /PWA -->
+<style>
     :root{
       --bg:#f3f6fb;
       --card:#ffffff;
@@ -248,10 +270,11 @@
     /* PDF (PRINT) */
     .pdf{
       display:none;
-      padding: 22px 12px 12px;
+      padding: 12px;
       background:#fff;
       color:#0b1220;
     }
+    /* header accent */
     .pdf .top::after{
       content:"";
       position:absolute;
@@ -267,38 +290,45 @@
       border-bottom: 2px solid #eef2f7;
       padding: 6px 0 10px 0;
     }
-
+    
     .pdf .logoRow{
       display:flex;
       justify-content:flex-start;
       align-items:flex-start;
-      margin-top: 0px;
+      margin-top: -18px; /* sobe o logo */
     }
     .pdf .logoRow img{
-      width: 330px;
-      height: 190px;
+      width: 330px; /* -50 */
+      height: 190px; /* -50 */
       object-fit: contain;
       display:block;
-      margin-left: 0px;
-      margin-top: 0px;
+      margin-left: -10px; /* mais pra esquerda */
+      margin-top: -10px;  /* mais pra cima */
     }
 
     .pdf .headRow{
       display:grid;
       grid-template-columns: 1fr auto;
       align-items:baseline;
-      margin-top: 0px;
+      margin-top:-28px; /* aproxima da logo */
     }
-
+    
     .pdf .pdfTitleCenter{
       margin: 12px 0 10px 0;
-      font-size: 18px;
+      font-size: 18px; /* -2px */
       font-weight: 1000;
       text-align:center;
       color: #0b1220 !important;
       letter-spacing:.2px;
     }
-
+.pdf .headRow .title{
+      margin:0;
+      font-size: 20px;
+      font-weight: 1000;
+      text-align:center; /* centro da página */
+      width:100%;
+      color:#0b1220;
+    }
     .pdf .datebox small{
       display:block;
       color: var(--brand-strong);
@@ -311,6 +341,7 @@
       font-size: 14px;
       font-weight: 1000;
     }
+
     .pdf .datebox .validadeLine{
       margin-top: 6px;
       font-size: 12px;
@@ -321,18 +352,25 @@
 
     .pdf .instaladorBox{
       color:#0b1220;
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 1px solid #eef2f7;
-      font-size: 12px;
-      font-weight: 900;
     }
     .pdf .instaladorBox .k{
       color: var(--brand-strong);
       font-weight:1000;
       margin-right:4px;
     }
-    .pdf .instaladorBox .v{ font-weight:900; }
+    .pdf .instaladorBox .v{
+      font-weight:900;
+    }
+
+    .pdf .instaladorBox{
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #eef2f7;
+      font-size: 12px;
+      font-weight: 900;
+      color:#0b1220;
+    }
+
     .pdf .instRow{
       display:flex;
       gap:14px;
@@ -340,17 +378,54 @@
       align-items:baseline;
       flex-wrap:wrap;
     }
+
     .pdf .instLine{ margin-top: 4px; }
     .pdf .instLine .k{ color: var(--brand-strong); font-weight: 1000; }
     .pdf .instLine .v{ color:#0b1220; font-weight: 900; }
+
+    .pdf .iconWA{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:16px;
+      height:16px;
+      border-radius: 999px;
+      color:#16a34a;
+      margin: 0 6px 0 6px;
+      vertical-align: -2px;
+    }
+    .pdf .nubankIcon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:18px;
+      height:18px;
+      border-radius: 6px;
+      background:#7d2ae8;
+      color:#fff;
+      font-weight:1000;
+      font-size: 11px;
+      margin-right: 8px;
+      text-transform: lowercase;
+    }
     .pdf .bankLine{ display:flex; align-items:center; gap:0; }
-    .pdf .datebox{
+.pdf .datebox{
       text-align:right;
       font-weight:1000;
       color:#111827;
       white-space:nowrap;
     }
-    .pdf .datebox small{ font-size: 10px; }
+    .pdf .datebox small{
+      display:block;
+      color: var(--brand-strong);
+      font-weight:1000;
+      letter-spacing:.4px;
+      text-transform: uppercase;
+      font-size: 10px; /* menor */
+    }
+    .pdf .datebox div{
+      font-size: 12px; /* menor */
+    }
 
     .pdf .clientbox{
       border:1px solid #dbeafe;
@@ -360,9 +435,20 @@
       margin-top: 14px;
       min-height: 90px;
       box-shadow: 0 6px 18px rgba(17,24,39,.06);
+}
+    
+    .pdf .lblBlue{
+      color: var(--brand-strong);
+      font-weight: 1000;
     }
-
-    .pdf .lblBlue{ color: var(--brand-strong); font-weight: 1000; }
+.pdf .clientbox small{
+      color: var(--brand-strong);
+      font-weight: 1000;
+      text-transform: uppercase;
+      letter-spacing:.4px;
+      display:block;
+      margin-bottom: 6px;
+    }
 
     .pdf table{
       width:100%;
@@ -372,7 +458,7 @@
     }
     .pdf th{
       text-align:left;
-      color: var(--brand-strong);
+      color: var(--brand-strong); /* azul forte */
       border-bottom:2px solid #0f172a;
       padding: 10px 0;
       font-weight: 1000;
@@ -406,6 +492,7 @@
       margin-bottom: 6px;
       font-weight:900;
     }
+
     .pdf .sum .panel .grand{
       display:flex;
       justify-content:space-between;
@@ -435,6 +522,7 @@
       background:#fff;
     }
 
+    .pdf .bottom .value{ text-align:left; }
     .pdf .bottom .box.pay .value{
       font-size: 12px;
       font-weight: 800;
@@ -443,14 +531,20 @@
     }
     .pdf .bottom .box.obs .value{ font-size: 14px; font-weight:800; color:#334155; white-space:pre-wrap; }
 
+
     .pdf .bottom .box small{
-      color: var(--brand-strong);
+      color: var(--brand-strong); /* azul forte */
       font-weight: 1000;
       text-transform: uppercase;
       letter-spacing:.4px;
       display:block;
       margin-bottom: 6px;
     }
+
+    .pdf .bottom .box.pay small{ font-size: 10px; }
+
+
+    /* rodapé removido (sem texto) */
     .pdf .footer{ display:none; }
 
     @media print{
@@ -459,21 +553,164 @@
       .pdf{ display:block !important; }
       @page{ margin: 14mm; }
     }
+  
+/* --- FIXES (v12-layout) --- */
+.pdf .headRow{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items:start;
+  margin-top:-22px; /* aproxima do logo */
+}
+.pdf .datebox{
+  text-align:right;
+  font-weight:1000;
+  color:#111827;
+  white-space:nowrap;
+}
+.pdf .datebox small{
+  color: var(--brand-strong);
+  font-weight:1000;
+  letter-spacing:.4px;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+.pdf .datebox #pdfData{ font-size: 12px; font-weight: 1000; }
+.pdf .datebox .validadeLine{ margin-top: 6px; font-size: 12px; font-weight: 900; color:#0b1220; }
+.pdf .datebox .validadeLine .k{ color: var(--brand-strong); font-weight: 1000; }
+.pdf .instLine{ margin-top: 4px; }
+.pdf .instLine .k{ color: var(--brand-strong); font-weight: 1000; }
+.pdf .instLine .v{ color:#0b1220; font-weight: 900; }
+.pdf .pdfTitleCenter{ margin: 12px 0 10px 0; }
+.pdf .clientbox{ margin-top: 12px; }
 
-    .pdf .instRow{ gap: 0 !important; }
-    .pdf .instLine{ margin-top: 0 !important; line-height: 1.15 !important; }
-    .pdf .instLine + .instLine{ margin-top: 2px !important; }
-    .pdf .instaladorBox{
-      border-top: none !important;
-      padding-top: 0 !important;
-      margin-top: 0 !important;
+  
+    /* --- SURGICAL PDF LAYOUT FIXES (v12-fix3) --- */
+    .pdf .pdfTitleCenter{
+      color: var(--brand-strong) !important;
+      font-size: 18px !important; /* 2pt smaller vs common 20px-ish heading */
+      font-weight: 1000 !important;
+      margin: 14px 0 10px 0 !important;
+      text-align:center;
     }
-    .pdf .bankLine .k{ white-space: nowrap !important; }
-    .pdf .bankLine{ margin-top: 6px !important; }
-    .pdf .datebox .validadeLine{ font-size: 11px !important; }
-    .pdf .pdfTitleCenter{ color:#0b1220 !important; }
+
+    /* prevent header overlap (installer vs date box) */
+    .pdf .headRow{
+      margin-top: 6px !important;  /* remove negative that caused overlap */
+      grid-template-columns: 1fr auto !important;
+      gap: 18px !important;
+    }
+    .pdf .instaladorBox{
+      max-width: 520px;
+    }
+    .pdf .datebox{
+      min-width: 160px;
+    }
+
+    /* keep Observações & Forma de Pagamento aligned left under TOTAL */
+    .pdf .obsBox, .pdf .payBox, .pdf .obsbox, .pdf .paybox{
+      text-align:left !important;
+      align-self:flex-start !important;
+    }
+    
+  
     .pdf .gapTel{ display:inline-block; width:18px; }
+  
+/* total value smaller (-2) */
+.pdf #pdfTotalGeral,
+.pdf #totalGeralValor,
+.pdf .totalValue,
+.pdf .totalGeralValor,
+.pdf .valorTotalGeral{
+  font-size: 30px !important;
+}
+
+  
+/* --- SURGICAL PDF LAYOUT FIXES (v12-fix5) --- */
+
+/* tighter installer lines: Nome / Whats (no blank space) */
+.pdf .instRow{ gap: 0 !important; }
+.pdf .instLine{ margin-top: 0 !important; line-height: 1.15 !important; }
+.pdf .instLine + .instLine{ margin-top: 2px !important; }
+
+/* remove extra separator above installer (keep only overall layout clean) */
+.pdf .instaladorBox{
+  border-top: none !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* keep "Chave Pix:" together and on one line */
+.pdf .bankLine .k{ white-space: nowrap !important; }
+.pdf .bankLine{ margin-top: 6px !important; }
+
+/* validade da proposta: slightly smaller */
+.pdf .datebox .validadeLine{ font-size: 11px !important; }
+
+/* enforce Proposta Comercial title black */
+.pdf .pdfTitleCenter{ color:#0b1220 !important; }
+
+/* Total geral value smaller (-4 total) */
+.pdf #pdfTotalGeral,
+.pdf #totalGeralValor,
+.pdf .totalValue,
+.pdf .totalGeralValor,
+.pdf .valorTotalGeral{
+  font-size: 28px !important;
+}
+
+  
+/* --- BETA 0.1.10: ocultar dados do instalador no PDF (só CSS) --- */
+.pdf .instaladorBox{ display:none !important; }
+
+  
+}
+
+  /* --- BETA: não imprimir badge/debug no PDF --- */
+@media print{
+  #betaBadge, #betaDebug{ display:none !important; }
+}
+
   </style>
+
+<script>
+  // BETA DEBUG (0.1.3) - mostra erros na tela
+  (function(){
+    function ensureBox(){
+      var box = document.getElementById('betaDebug');
+      if(box) return box;
+      box = document.createElement('div');
+      box.id = 'betaDebug';
+      box.style.cssText = 'position:fixed;left:8px;right:8px;top:8px;max-height:32vh;overflow:auto;z-index:99999;background:rgba(0,0,0,.88);color:#fff;font:12px/1.35 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial;padding:10px;border-radius:12px;display:none;white-space:pre-wrap;';
+      function attach(){ try{ (document.body||document.documentElement).appendChild(box); }catch(e){} }
+      if(document.body) attach(); else document.addEventListener('DOMContentLoaded', attach, { once:true });
+      return box;
+    }
+    function show(msg){
+      var box = ensureBox();
+      box.style.display = 'block';
+      box.textContent += (box.textContent ? '
+' : '') + msg;
+    }
+    window.__betaShow = show;
+    window.addEventListener('error', function(e){
+      show('[ERRO] ' + (e.message || 'erro') + (e.filename ? ('
+' + e.filename + ':' + e.lineno) : ''));
+    });
+    window.addEventListener('unhandledrejection', function(e){
+      show('[PROMISE] ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)));
+    });
+  })();
+</script>
+
+
+<script>
+  // === BETA CONFIG (edite aqui) ==========================================
+  window.APP_VERSION = "0.1.10";
+  // =======================================================================
+  try{ document.title = "Orçamento Climatização - BETA " + window.APP_VERSION; }catch(e){}
+</script>
+
 </head>
 
 <body>
@@ -531,7 +768,6 @@
           <span class="value" id="totalLabel">R$ 0,00</span>
         </div>
       </div>
-
       <div style="margin-top:12px">
         <label>Desconto (R$)</label>
         <div class="money">
@@ -539,6 +775,7 @@
           <input id="desconto" inputmode="decimal" placeholder="0,00" />
         </div>
       </div>
+
 
       <div style="margin-top:12px">
         <label>Forma de pagamento</label>
@@ -553,46 +790,46 @@
 
   <!-- PDF -->
   <section class="pdf" id="pdf">
-    <div class="top">
-      <div class="logoRow">
-        <img id="pdfLogo" src="" alt="logo" crossorigin="anonymous" onerror="this.style.display='none'"/>
-      </div>
+<div class="top">
+  <div class="logoRow">
+    <img id="pdfLogo" src="logo.png" alt="logo" onerror="this.style.display='none'"/>
+  </div>
 
-      <div class="headRow">
-        <div class="instaladorBox">
-          <div class="instRow">
-            <div class="instLine">
-              <span class="k">Nome:</span>
-              <span class="v">-</span>
-            </div>
-
-            <div class="instLine">
-              <span class="k">Whats:</span>
-              <span class="v whatsappLine">
-                <svg viewBox="0 0 24 24" width="14" height="14" style="margin-right:6px; vertical-align:-2px;">
-                  <path fill="#16a34a" d="M20.5 11.9c0-4.7-3.9-8.6-8.6-8.6S3.3 7.2 3.3 11.9c0 1.5.4 2.9 1.1 4.1L3 21l5.1-1.3c1.2.7 2.6 1.1 3.9 1.1 4.7 0 8.5-3.9 8.5-8.6Z"/>
-                </svg>
-                <span id="pdfWhatsFix">-</span>
-              </span>
-            </div>
-          </div>
-
-          <div class="instLine bankLine"><span class="k">Chave Pix:</span> <span class="v">-</span></div>
-        </div>
-
-        <div class="datebox">
-          <small>Data de emissão</small>
-          <div id="pdfData"></div>
-          <div class="validadeLine"><span class="k">Validade da proposta:</span> <span id="pdfValidade"></span></div>
-        </div>
-      </div>
+  <div class="headRow">
+    <div class="instaladorBox">
+  <div class="instRow">
+    <div class="instLine">
+      <span class="k">Nome:</span>
+      <span class="v">Robson Andre Extecoetter</span>
     </div>
 
+    <div class="instLine">
+      <span class="k">Whats:</span>
+      <span class="v whatsappLine">
+        <svg viewBox="0 0 24 24" width="14" height="14" style="margin-right:6px; vertical-align:-2px;">
+          <path fill="#16a34a" d="M20.5 11.9c0-4.7-3.9-8.6-8.6-8.6S3.3 7.2 3.3 11.9c0 1.5.4 2.9 1.1 4.1L3 21l5.1-1.3c1.2.7 2.6 1.1 3.9 1.1 4.7 0 8.5-3.9 8.5-8.6Z"/>
+        </svg>
+        <span id="pdfWhatsFix">(14) 99707-3447</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="instLine bankLine"><span class="k">Chave Pix:</span> <span class="v">14 99707 3447 / Robson A Extecoetter</span></div>
+</div>
+
+        <div class="datebox">
+      <small>Data de emissão</small>
+      <div id="pdfData"></div>
+      <div class="validadeLine"><span class="k">Validade da proposta:</span> <span id="pdfValidade"></span></div>
+    </div>
+  </div>
+</div>
     <div class="clientbox">
       <div id="pdfClienteLine" style="font-weight:1000; color:#111827"></div>
       <div id="pdfEndereco" style="margin-top:6px; color:#334155; font-weight:800"></div>
     </div>
 
+    
     <div class="pdfTitleCenter">Proposta Comercial</div>
 
     <table>
@@ -627,399 +864,463 @@
     <div class="footer"></div>
   </section>
 
-  <div class="actions">
-    <div class="inner">
-      <button class="btn" id="btnLimpar" type="button">Limpar</button>
-      <button class="btn primary" id="btnPdf" type="button">Gerar PDF</button>
-    </div>
+  
+<div class="actions">
+  <div class="inner">
+    <button class="btn" id="btnLimpar" type="button">Limpar</button>
+    <button class="btn primary" id="btnPdf" type="button">Gerar PDF</button>
   </div>
+</div>
 
-  <!-- ====== CONFIG POR CLIENTE (HÍBRIDO) ====== -->
-  <script>
-    // Lê ?c=slug
-    window.CLIENT_SLUG = (new URLSearchParams(location.search).get("c") || "").trim();
-    window.CLIENT_CONFIG = window.CLIENT_CONFIG || null;
+<!-- Config por cliente (coloque um config.js dentro da pasta do cliente) -->
+<script>
+  // Se existir um arquivo "config.js" na mesma pasta, ele deve definir: window.CLIENT_CONFIG = { installer: {...}, logo: "logo.png" }
+  window.CLIENT_CONFIG = window.CLIENT_CONFIG || null;
+</script>
+<script src="config.js"></script>
+<script>
+  // Fallback: se não existir config.js, usa este padrão
+  const INSTALLER = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) ? window.CLIENT_CONFIG.installer : {
+    nome: "Robson Andre Extecoetter",
+    whats: "(14) 99707-3447",
+    pix: "14 99707 3447 / Robson A Extecoetter",
+    logo: "logo.png"
+  };
+</script>
 
-    function loadClientConfig(slug){
-      return new Promise((resolve) => {
-        if(!slug) return resolve(false);
-        const s = document.createElement("script");
-        s.src = "../clientes/" + slug + "/config.js";
-        s.onload = () => resolve(true);
-        s.onerror = () => resolve(false);
-        document.head.appendChild(s);
-      });
-    }
+  <!-- libs locais para gerar PDF real -->
+  <script src="./assets/libs/html2canvas.min.js"></script>
+  <script src="./assets/libs/jspdf.umd.min.js"></script>
 
-    function resolveClientAsset(path){
-      const p = String(path || "").trim();
-      if(!p) return "";
-      // absoluto ou URL
-      if(/^https?:\/\//i.test(p) || p.startsWith("data:") || p.startsWith("blob:")) return p;
-      if(p.startsWith("/") || p.startsWith("../")) return p;
-      // relativo simples: assume que está na pasta do cliente
-      if(window.CLIENT_SLUG) return "../clientes/" + window.CLIENT_SLUG + "/" + p.replace(/^\.?\//, "");
-      return p;
-    }
-  </script>
+<script>
+  const brl = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
 
-  <script>
-  (async () => {
-    // 1) carrega config do cliente
-    await loadClientConfig(window.CLIENT_SLUG);
+  function parseBRL(str){
+    if(!str) return 0;
+    const s = String(str).replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',', '.');
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  }
 
-    // 2) installer: config ou fallback
-    const INSTALLER = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) ? window.CLIENT_CONFIG.installer : {
-      nome: "Robson Andre Extecoetter",
-      whats: "(14) 99707-3447",
-      pix: "14 99707 3447 / Robson A Extecoetter",
-      logo: "logo.png"
+  function todayISO(){
+    const d = new Date();
+    const tzOff = d.getTimezoneOffset() * 60000;
+    return new Date(Date.now()-tzOff).toISOString().slice(0,10);
+  }
+
+  const PRESETS = [
+    { name: "Instalação Split 9000 a a12000 BTUs", price: 650 },
+    { name: "Instalação Split 18000 a 24000 BTUs", price: 800 },
+    { name: "Limpeza e Higienização Split", price: 180 },
+    { name: "Lavagem Completa (Desmontagem do Equipamento)", price: 350 },
+    { name: "Instalação Piso Teto / Cassete", price: 1200 },
+    { name: "Instalação Multi-Split (Por Evaporadora)", price: 450 },
+    { name: "Desinstalação de Equipamento", price: 250 },
+    { name: "Aplicaçao de Vácuo no Sistema", price: 180 },
+    { name: "Troca de Componente Eletronico", price: 300 },
+    { name: "Visita Técnica / Diagnostico", price: 150 },
+    { name: "Pressurizaçao com Nitrogenio", price: 200 },
+    { name: "Carga de Gás", price: 200 },
+    { name: "Limpeza Química (Desmontagem Completa)", price: 350 },
+    { name: "PMOC", price: 350 },
+    { name: "Solda de Tubo", price: 200 },
+    { name: "Outros Serviços", price: 100 },
+  ];
+
+  const state = { items: [] };
+  const listEl = document.getElementById('servicesList');
+  // === BETA PATCH START: iPhone UID ==================================
+
+
+// iPhone/Safari: crypto.randomUUID pode não existir
+function uid(){
+  try{
+    if(window.crypto && typeof crypto.randomUUID === 'function') return uid();
+  }  // === BETA PATCH END: iPhone UID ====================================
+catch(e){}
+  return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+
+  function addItem(){
+    const item = {
+      id: uid(),
+      presetIndex: -1,
+      desc: "",
+      price: 0,
+      qty: 1
     };
-
-    // Normaliza o logo (permite config.logo = "logo.png")
-    INSTALLER.logo = resolveClientAsset(INSTALLER.logo || "logo.png");
-    let INSTALLER_LOGO_DATA = null;
-    // tenta embutir o logo como base64 (mais confiável no print/PDF)
-    INSTALLER_LOGO_DATA = await inlineImageToDataURL(INSTALLER.logo);
-
-    // ====== CÓDIGO ORIGINAL ======
-    const brl = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
-
-    function parseBRL(str){
-      if(!str) return 0;
-      const s = String(str).replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',', '.');
-      const n = Number(s);
-      return Number.isFinite(n) ? n : 0;
-    }
-
-    function todayISO(){
-      const d = new Date();
-      const tzOff = d.getTimezoneOffset() * 60000;
-      return new Date(Date.now()-tzOff).toISOString().slice(0,10);
-    }
-
-    const PRESETS = [
-      { name: "Instalação Split 9000 a a12000 BTUs", price: 650 },
-      { name: "Instalação Split 18000 a 24000 BTUs", price: 800 },
-      { name: "Limpeza e Higienização Split", price: 180 },
-      { name: "Lavagem Completa (Desmontagem do Equipamento)", price: 350 },
-      { name: "Instalação Piso Teto / Cassete", price: 1200 },
-      { name: "Instalação Multi-Split (Por Evaporadora)", price: 450 },
-      { name: "Desinstalação de Equipamento", price: 250 },
-      { name: "Aplicaçao de Vácuo no Sistema", price: 180 },
-      { name: "Troca de Componente Eletronico", price: 300 },
-      { name: "Visita Técnica / Diagnostico", price: 150 },
-      { name: "Pressurizaçao com Nitrogenio", price: 200 },
-      { name: "Carga de Gás", price: 200 },
-      { name: "Limpeza Química (Desmontagem Completa)", price: 350 },
-      { name: "PMOC", price: 350 },
-      { name: "Solda de Tubo", price: 200 },
-      { name: "Outros Serviços", price: 100 },
-    ];
-
-    const state = { items: [] };
-    const listEl = document.getElementById('servicesList');
-
-    function addItem(){
-      const item = {
-        id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('id-' + Date.now() + '-' + Math.random().toString(16).slice(2)),
-        presetIndex: -1,
-        desc: "",
-        price: 0,
-        qty: 1
-      };
-      state.items.push(item);
-      renderItems();
-      recalc();
-    }
-
-    function removeItem(id){
-      state.items = state.items.filter(i => i.id !== id);
-      renderItems();
-      recalc();
-    }
-
-    function setItem(id, patch){
-      const it = state.items.find(i => i.id === id);
-      if(!it) return;
-      Object.assign(it, patch);
-      recalc();
-    }
-
-    function renderItems(){
-      listEl.innerHTML = "";
-      if(state.items.length === 0){
-        const empty = document.createElement('div');
-        empty.style.color = "#6b7280";
-        empty.style.fontWeight = "800";
-        empty.style.padding = "6px 2px";
-        empty.textContent = "Nenhum serviço adicionado. Clique em “ADICIONAR ITEM”.";
-        listEl.appendChild(empty);
-        return;
-      }
-
-      state.items.forEach((it) => {
-        const div = document.createElement('div');
-        div.className = "service";
-
-        div.innerHTML = `
-          <div class="service-top">
-            <select aria-label="Serviço">
-              <option value="-1">${it.desc ? it.desc : "Selecione..."}</option>
-              ${PRESETS.map((p, idx) => `<option value="${idx}">${p.name}</option>`).join('')}
-            </select>
-            <button class="trash" title="Remover">🗑️</button>
-          </div>
-
-          <div class="service-bottom">
-            <div class="money">
-              <span>R$</span>
-              <input inputmode="decimal" placeholder="0,00" value="${(it.price).toFixed(2).replace('.', ',')}" />
-            </div>
-
-            <div class="qty" aria-label="Quantidade">
-              <button data-act="minus" type="button" aria-label="Diminuir">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M6 12h12"></path>
-                </svg>
-              </button>
-              <b>${it.qty}</b>
-              <button data-act="plus" type="button" aria-label="Aumentar">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M12 6v12"></path>
-                  <path d="M6 12h12"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-        `;
-
-        const sel = div.querySelector('select');
-        const trash = div.querySelector('.trash');
-        const priceInput = div.querySelector('input');
-        const qtyBox = div.querySelector('.qty');
-        const qtyLabel = div.querySelector('.qty b');
-
-        sel.addEventListener('change', (e) => {
-          const idx = Number(e.target.value);
-          if(idx >= 0){
-            setItem(it.id, { presetIndex: idx, desc: PRESETS[idx].name, price: PRESETS[idx].price });
-            priceInput.value = PRESETS[idx].price.toFixed(2).replace('.', ',');
-          }
-        });
-
-        trash.addEventListener('click', () => removeItem(it.id));
-
-        priceInput.addEventListener('input', () => {
-          setItem(it.id, { price: parseBRL(priceInput.value) });
-        });
-
-        qtyBox.addEventListener('click', (e) => {
-          const btn = e.target.closest('button');
-          if(!btn) return;
-          const act = btn.dataset.act;
-          let q = it.qty || 1;
-          if(act === "minus") q = Math.max(1, q - 1);
-          if(act === "plus") q = q + 1;
-          qtyLabel.textContent = q;
-          setItem(it.id, { qty: q });
-        });
-
-        listEl.appendChild(div);
-      });
-    }
-
-    const totalLabel = document.getElementById('totalLabel');
-
-    function recalc(){
-      let total = 0;
-      for(const it of state.items){
-        const sub = (Number(it.price) || 0) * (Number(it.qty) || 0);
-        total += sub;
-      }
-      const desconto = parseBRL(document.getElementById('desconto')?.value || '');
-      const totalFinal = Math.max(0, total - desconto);
-      totalLabel.textContent = brl.format(totalFinal);
-    }
-
-    function formatPhoneDisplay(p){
-      return String(p || "")
-        .replace(/[()]/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    function escapeHtml(s){
-      return String(s)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
-    
-    function waitImageLoaded(imgEl, timeoutMs = 2500){
-      return new Promise((resolve) => {
-        if(!imgEl) return resolve();
-        // If already loaded successfully
-        if(imgEl.complete && imgEl.naturalWidth > 0) return resolve();
-        let settled = false;
-
-        const done = () => {
-          if(settled) return;
-          settled = true;
-          cleanup();
-          resolve();
-        };
-
-        const cleanup = () => {
-          try{ imgEl.removeEventListener("load", done); }catch(e){}
-          try{ imgEl.removeEventListener("error", done); }catch(e){}
-          if(timer) clearTimeout(timer);
-        };
-
-        imgEl.addEventListener("load", done, { once: true });
-        imgEl.addEventListener("error", done, { once: true });
-
-        const timer = setTimeout(done, timeoutMs);
-      });
-    }
-
-    async function inlineImageToDataURL(url){
-      try{
-        const res = await fetch(url, { cache: "force-cache" });
-        if(!res.ok) throw new Error("fetch failed: " + res.status);
-        const blob = await res.blob();
-        return await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(blob);
-        });
-      }catch(e){
-        return null; // fallback para URL normal
-      }
-    }
-
-function fillPDF(){
-      const logoEl = document.getElementById('pdfLogo');
-      if(logoEl){
-        // reexibe caso um erro anterior tenha escondido
-        logoEl.style.display = 'block';
-        const srcLogo = (typeof INSTALLER_LOGO_DATA === 'string' && INSTALLER_LOGO_DATA.startsWith('data:'))
-          ? INSTALLER_LOGO_DATA
-          : (INSTALLER && INSTALLER.logo ? INSTALLER.logo : '');
-        if(srcLogo) logoEl.src = srcLogo;
-      }
-
-      const nomeInst = (INSTALLER && INSTALLER.nome) ? INSTALLER.nome : "";
-      const whatsInst = (INSTALLER && INSTALLER.whats) ? INSTALLER.whats : "";
-      const pixInst = (INSTALLER && INSTALLER.pix) ? INSTALLER.pix : "";
-
-      const waElFix = document.getElementById('pdfWhatsFix');
-      if(waElFix) waElFix.textContent = whatsInst;
-
-      const pixLine = document.querySelector('.pdf .bankLine .v');
-      if(pixLine) pixLine.textContent = pixInst;
-
-      const nomeLine = document.querySelector('.pdf .instLine .v');
-      if(nomeLine) nomeLine.textContent = nomeInst;
-
-      const cliente = document.getElementById('cliente').value.trim();
-      const endereco = document.getElementById('endereco').value.trim();
-      const telefone = document.getElementById('telefone').value.trim();
-      const obs = document.getElementById('obs').value.trim();
-      const pagamento = document.getElementById('pagamento').value.trim();
-      const data = document.getElementById('data').value;
-
-      document.getElementById('pdfClienteLine').innerHTML =
-        `<span class="lblBlue">Cliente:</span> ${escapeHtml(cliente || '')}` +
-        `<span class="gapTel"></span>` +
-        `<span class="lblBlue">TEL:</span> ${escapeHtml(formatPhoneDisplay(telefone || ''))}`;
-
-      document.getElementById('pdfEndereco').innerHTML =
-        endereco ? `<span class="lblBlue">END:</span> ${escapeHtml(endereco)}` : '';
-
-      document.getElementById('pdfObs').textContent = obs || "";
-      document.getElementById('pdfPagamento').textContent = pagamento || "";
-
-      const d = data ? new Date(data+"T00:00:00") : new Date();
-      const dd = String(d.getDate()).padStart(2,'0');
-      const mm = String(d.getMonth()+1).padStart(2,'0');
-      const yyyy = d.getFullYear();
-      document.getElementById('pdfData').textContent = `${dd}/${mm}/${yyyy}`;
-
-      const tbody = document.getElementById('pdfTbody');
-      tbody.innerHTML = "";
-
-      let total = 0;
-      state.items.forEach(it => {
-        const desc = it.desc || "Serviço";
-        const qty = Number(it.qty) || 1;
-        const sub = (Number(it.price)||0) * qty;
-        total += sub;
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${escapeHtml(desc)}</td>
-          <td>${qty}</td>
-          <td>${brl.format(sub)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      const desconto = parseBRL(document.getElementById('desconto')?.value || '');
-      const totalFinal = Math.max(0, total - desconto);
-
-      const validade = (document.getElementById('validade')?.value || '').trim();
-      const validadeTxt = validade || "7 dias";
-
-      const pdfDescontoEl = document.getElementById('pdfDesconto');
-      if(pdfDescontoEl) pdfDescontoEl.textContent = brl.format(desconto);
-
-      const pdfValEl = document.getElementById('pdfValidade');
-      if(pdfValEl) pdfValEl.textContent = validadeTxt;
-
-      document.getElementById('pdfTotal').textContent = brl.format(totalFinal);
-    }
-
-    document.getElementById('btnAdd').addEventListener('click', addItem);
-    document.getElementById('btnPdf').addEventListener('click', async () => {
-      fillPDF();
-      // Aguarda o logo carregar antes do print (evita sair branco no topo)
-      const logoEl = document.getElementById('pdfLogo');
-      await waitImageLoaded(logoEl, 5000);
-      window.print();
-    });
-document.getElementById('btnLimpar').addEventListener('click', () => {
-      state.items = [];
-      renderItems();
-      document.getElementById('cliente').value = "";
-      document.getElementById('endereco').value = "";
-      document.getElementById('telefone').value = "";
-      document.getElementById('obs').value = "";
-      document.getElementById('pagamento').value = "";
-      document.getElementById('data').value = todayISO();
-      const vEl = document.getElementById('validade'); if(vEl && !vEl.value) vEl.value = "7 dias";
-      recalc();
-    });
-
-    const descontoEl = document.getElementById('desconto');
-    if(descontoEl){
-      descontoEl.addEventListener('input', recalc);
-      descontoEl.addEventListener('blur', () => {
-        const v = parseBRL(descontoEl.value);
-        descontoEl.value = (v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-        recalc();
-      });
-    }
-
-    document.getElementById('data').value = todayISO();
+    state.items.push(item);
     renderItems();
     recalc();
-  })();
-  </script>
+  }
 
-  <!-- OBS: você pode manter suas libs CDN aqui como já usava antes (jsPDF/html2canvas) -->
+  function removeItem(id){
+    state.items = state.items.filter(i => i.id !== id);
+    renderItems();
+    recalc();
+  }
+
+  function setItem(id, patch){
+    const it = state.items.find(i => i.id === id);
+    if(!it) return;
+    Object.assign(it, patch);
+    recalc();
+  }
+
+  function renderItems(){
+    listEl.innerHTML = "";
+    if(state.items.length === 0){
+      const empty = document.createElement('div');
+      empty.style.color = "#6b7280";
+      empty.style.fontWeight = "800";
+      empty.style.padding = "6px 2px";
+      empty.textContent = "Nenhum serviço adicionado. Clique em “ADICIONAR ITEM”.";
+      listEl.appendChild(empty);
+      return;
+    }
+
+    state.items.forEach((it) => {
+      const div = document.createElement('div');
+      div.className = "service";
+
+      div.innerHTML = `
+        <div class="service-top">
+          <select aria-label="Serviço">
+            <option value="-1">${it.desc ? it.desc : "Selecione..."}</option>
+            ${PRESETS.map((p, idx) => `<option value="${idx}">${p.name}</option>`).join('')}
+          </select>
+          <button class="trash" title="Remover">🗑️</button>
+        </div>
+
+        <div class="service-bottom">
+          <div class="money">
+            <span>R$</span>
+            <input inputmode="decimal" placeholder="0,00" value="${(it.price).toFixed(2).replace('.', ',')}" />
+          </div>
+
+          <div class="qty" aria-label="Quantidade">
+            <button data-act="minus" type="button" aria-label="Diminuir">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M6 12h12"></path>
+              </svg>
+            </button>
+            <b>${it.qty}</b>
+            <button data-act="plus" type="button" aria-label="Aumentar">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M12 6v12"></path>
+                <path d="M6 12h12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+
+      const sel = div.querySelector('select');
+      const trash = div.querySelector('.trash');
+      const priceInput = div.querySelector('input');
+      const qtyBox = div.querySelector('.qty');
+      const qtyLabel = div.querySelector('.qty b');
+
+      sel.addEventListener('change', (e) => {
+        const idx = Number(e.target.value);
+        if(idx >= 0){
+          setItem(it.id, { presetIndex: idx, desc: PRESETS[idx].name, price: PRESETS[idx].price });
+          priceInput.value = PRESETS[idx].price.toFixed(2).replace('.', ',');
+        }
+      });
+
+      trash.addEventListener('click', () => removeItem(it.id));
+
+      priceInput.addEventListener('input', () => {
+        setItem(it.id, { price: parseBRL(priceInput.value) });
+      });
+
+      qtyBox.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if(!btn) return;
+        const act = btn.dataset.act;
+        let q = it.qty || 1;
+        if(act === "minus") q = Math.max(1, q - 1);
+        if(act === "plus") q = q + 1;
+        qtyLabel.textContent = q;
+        setItem(it.id, { qty: q });
+      });
+
+      listEl.appendChild(div);
+    });
+  }
+
+  const totalLabel = document.getElementById('totalLabel');
+
+  function recalc(){
+    let total = 0;
+    for(const it of state.items){
+      const sub = (Number(it.price) || 0) * (Number(it.qty) || 0);
+      total += sub;
+    }
+    const desconto = parseBRL(document.getElementById('desconto')?.value || '');
+    const totalFinal = Math.max(0, total - desconto);
+    totalLabel.textContent = brl.format(totalFinal);
+  }
+
+  function formatPhoneDisplay(p){
+  // remove parênteses e espaços extras para ficar: 14 9XXXX-XXXX (ou o que o usuário digitou, sem "(" e ")")
+  return String(p || "")
+    .replace(/[()]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function fillPDF(){
+
+// Dados do instalador (config por cliente)
+const logoEl = document.getElementById('pdfLogo');
+if(logoEl && INSTALLER && INSTALLER.logo) logoEl.src = INSTALLER.logo;
+
+const nomeInst = (INSTALLER && INSTALLER.nome) ? INSTALLER.nome : "";
+const whatsInst = (INSTALLER && INSTALLER.whats) ? INSTALLER.whats : "";
+const pixInst = (INSTALLER && INSTALLER.pix) ? INSTALLER.pix : "";
+
+const waElFix = document.getElementById('pdfWhatsFix');
+if(waElFix) waElFix.textContent = whatsInst;
+
+// Atualiza Chave Pix (linha do instalador)
+const pixLine = document.querySelector('.pdf .bankLine .v');
+if(pixLine) pixLine.textContent = pixInst;
+
+// Atualiza Nome do instalador (linha do topo)
+const nomeLine = document.querySelector('.pdf .instLine .v');
+if(nomeLine) nomeLine.textContent = nomeInst;
+
+    const cliente = document.getElementById('cliente').value.trim();
+    const endereco = document.getElementById('endereco').value.trim();
+    const telefone = document.getElementById('telefone').value.trim();
+const obs = document.getElementById('obs').value.trim();
+    const pagamento = document.getElementById('pagamento').value.trim();
+    const data = document.getElementById('data').value;
+
+    document.getElementById('pdfClienteLine').innerHTML = `<span class="lblBlue">Cliente:</span> ${escapeHtml(cliente || '')}<span class="gapTel"></span><span class="lblBlue">TEL:</span> ${escapeHtml(formatPhoneDisplay(telefone || ''))}`;
+    document.getElementById('pdfEndereco').innerHTML = endereco ? `<span class="lblBlue">END:</span> ${escapeHtml(endereco)}` : '';
+    document.getElementById('pdfObs').textContent = obs || "";
+    document.getElementById('pdfPagamento').textContent = pagamento || "";
+
+    const d = data ? new Date(data+"T00:00:00") : new Date();
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yyyy = d.getFullYear();
+    document.getElementById('pdfData').textContent = `${dd}/${mm}/${yyyy}`;
+
+    const tbody = document.getElementById('pdfTbody');
+    tbody.innerHTML = "";
+
+    let total = 0;
+    state.items.forEach(it => {
+      const desc = it.desc || "Serviço";
+      const qty = Number(it.qty) || 1;
+      const sub = (Number(it.price)||0) * qty;
+      total += sub;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(desc)}</td>
+        <td>${qty}</td>
+        <td>${brl.format(sub)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    const desconto = parseBRL(document.getElementById('desconto')?.value || '');
+    const totalFinal = Math.max(0, total - desconto);
+
+    const validade = (document.getElementById('validade')?.value || '').trim();
+    const validadeTxt = validade || "7 dias";
+
+    const pdfDescontoEl = document.getElementById('pdfDesconto');
+    if(pdfDescontoEl) pdfDescontoEl.textContent = brl.format(desconto);
+
+    const pdfValEl = document.getElementById('pdfValidade');
+    if(pdfValEl) pdfValEl.textContent = validadeTxt;
+
+    document.getElementById('pdfTotal').textContent = brl.format(totalFinal);
+  }
+
+async function gerarPdfBlob(){
+  // Gera um PDF a partir da seção #pdf (sem abrir print)
+  const pdfEl = document.getElementById('pdf');
+  if(!pdfEl) throw new Error("Seção do PDF não encontrada.");
+
+  // html2canvas NÃO renderiza bem com display:none.
+  // Então deixamos o PDF "visível fora da tela" só durante a captura.
+  const prev = {
+    display: pdfEl.style.display,
+    position: pdfEl.style.position,
+    left: pdfEl.style.left,
+    top: pdfEl.style.top,
+    width: pdfEl.style.width,
+    visibility: pdfEl.style.visibility
+  };
+
+  pdfEl.style.display = "block";
+  pdfEl.style.position = "fixed";
+  pdfEl.style.left = "-10000px";
+  pdfEl.style.top = "0";
+  pdfEl.style.width = "794px"; // aprox A4 em 96dpi (estável)
+  pdfEl.style.visibility = "hidden";
+
+  try{
+    // Renderiza em canvas
+    const canvas = await html2canvas(pdfEl, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+    const { jsPDF } = window.jspdf; // vindo do jspdf.umd.min.js
+    const doc = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
+
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+
+    // Ajusta imagem à largura da página, mantendo proporção
+    const imgW = pageW;
+    const imgH = (canvas.height * imgW) / canvas.width;
+
+    if(imgH <= pageH){
+      doc.addImage(imgData, "JPEG", 0, 0, imgW, imgH);
+    }else{
+      // Paginação simples (corta em múltiplas páginas)
+      let y = 0;
+      let remaining = imgH;
+      while(remaining > 0){
+        doc.addImage(imgData, "JPEG", 0, -y, imgW, imgH);
+        remaining -= pageH;
+        y += pageH;
+        if(remaining > 0) doc.addPage();
+      }
+    }
+
+    return doc.output("blob");
+  } finally {
+    // restaura estilos
+    pdfEl.style.display = prev.display;
+    pdfEl.style.position = prev.position;
+    pdfEl.style.left = prev.left;
+    pdfEl.style.top = prev.top;
+    pdfEl.style.width = prev.width;
+    pdfEl.style.visibility = prev.visibility;
+  }
+}
+
+async function enviarPdfParaWhatsapp(){
+  fillPDF();
+
+  const fileName = "proposta.pdf";
+  try{
+    const blob = await gerarPdfBlob();
+    const file = new File([blob], fileName, { type: "application/pdf" });
+
+    if(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })){
+      await navigator.share({
+        title: "Proposta Comercial",
+        text: "Segue a proposta em PDF.",
+        files: [file]
+      });
+      return;
+    }
+
+    // Fallback: abre WhatsApp com mensagem (anexo precisa ser manual)
+    const msg = encodeURIComponent("Segue a proposta. (Se o PDF não anexar automaticamente, clique em anexo e selecione o arquivo salvo.)");
+    window.open("https://wa.me/?text=" + msg, "_blank");
+
+    // E baixa o PDF para o usuário anexar
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  }catch(err){
+    alert("Não foi possível gerar/compartilhar o PDF: " + (err && err.message ? err.message : err));
+  }
+}
+
+
+
+  document.getElementById('btnAdd').addEventListener('click', addItem);
+
+  document.getElementById('btnPdf').addEventListener('click', async () => {
+  try{
+    fillPDF();
+    const blob = await gerarPdfBlob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'proposta.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1500);
+  }catch(err){
+    alert('Erro ao gerar PDF: ' + (err && err.message ? err.message : err));
+  }
+});
+  document.getElementById('btnLimpar').addEventListener('click', () => {
+    state.items = [];
+    renderItems();
+    document.getElementById('cliente').value = "";
+    document.getElementById('endereco').value = "";
+    document.getElementById('telefone').value = "";
+    document.getElementById('obs').value = "";
+    document.getElementById('pagamento').value = "";
+    document.getElementById('data').value = todayISO();
+  const vEl = document.getElementById('validade'); if(vEl && !vEl.value) vEl.value = "7 dias";
+    recalc();
+  });
+
+  const descontoEl = document.getElementById('desconto');
+  if(descontoEl){
+    descontoEl.addEventListener('input', recalc);
+    descontoEl.addEventListener('blur', () => {
+      const v = parseBRL(descontoEl.value);
+      // formata no padrão pt-BR (sem R$ porque já tem o prefixo)
+      descontoEl.value = (v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      recalc();
+    });
+  }
+
+  // init
+  document.getElementById('data').value = todayISO();
+  renderItems(); // começa zerado
+  recalc();
+
+// PWA: Service Worker (BETA 0.1.10)
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
+
+</script>
+<div id="betaBadge"></div>
+<script>
+  // === BETA UI (não afeta PDF) ===========================================
+  (function(){
+    const v = (window.APP_VERSION || "0.0.0");
+    const badge = document.getElementById('betaBadge');
+    if(badge){
+      badge.textContent = "BETA " + v;
+      badge.style.cssText = "position:fixed;right:10px;bottom:10px;z-index:2147483647;background:rgba(31,111,235,.97);color:#fff;font:12px/1 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial;padding:7px 10px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.25);";
+    }
+  })();
+</script>
+
 </body>
 </html>
