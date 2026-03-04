@@ -3,22 +3,22 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Entrar no app</title>
+  <meta name="theme-color" content="#1f6feb" />
+  <title>Orçamentos - Robson</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
 </head>
-<body style="font-family:Arial;padding:20px">
-  <h3>Cliente: robsonextecoetter</h3>
+<body>
+<script>
+  // 1) registra SW no escopo do cliente
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./service-worker.js", { scope: "./" }).catch(()=>{});
+  }
 
-  <p>Se não redirecionar automaticamente, clique no link:</p>
-
-  <p>
-    <a id="go" href="../../app/index.html?c=robsonextecoetter">
-      Abrir app
-    </a>
-  </p>
-
-  <script>
-    // tenta redirecionar (mas o link fica pra debug)
-    location.replace(document.getElementById("go").href);
-  </script>
+  // 2) entra no app apontando este cliente
+  location.replace("../../app/index.html?c=robsonextecoetter");
+</script>
 </body>
 </html>
