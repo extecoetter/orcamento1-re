@@ -1,4 +1,4 @@
-const CACHE = "orcamento-pwa-robson-v2";
+const CACHE = "orcamento-pwa-robson-v3";
 
 const CORE = [
   "./",
