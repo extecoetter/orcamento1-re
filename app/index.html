@@ -1114,6 +1114,13 @@ function fillPDF(){
       // Gerador padrão (print). Mantido como fallback seguro.
       fillPDF();
 
+      // Aguarda o logo carregar antes do print (evita sair branco no topo)
+      const logoEl = document.getElementById('pdfLogo');
+      await waitImageLoaded(logoEl, 5000);
+
+      window.print();
+    });
+
 // Botão "Compartilhar PDF" (não interfere no restante do app)
     const btnShare = document.getElementById("btnShare");
     if(btnShare){
