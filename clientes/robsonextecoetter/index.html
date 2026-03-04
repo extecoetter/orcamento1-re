@@ -1,27 +1,37 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#1f6feb" />
-  <title>Orçamentos</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orçamentos - Robson</title>
 
-  <link rel="manifest" href="./manifest.json">
-  <link rel="icon" href="./icons/icon-192.png">
-  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="manifest" href="./manifest.json">
 
-  <style>
-    html,body{height:100%; margin:0;}
-    iframe{border:0; width:100%; height:100%;}
-  </style>
+<style>
+html,body{
+  margin:0;
+  height:100%;
+  background:#0f172a;
+}
+iframe{
+  border:0;
+  width:100%;
+  height:100%;
+}
+</style>
 </head>
-<body>
-  <iframe id="appFrame" src="../../app/index.html?c=robsonextecoetter"></iframe>
 
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./service-worker.js", { scope: "./" }).catch(()=>{});
-    }
-  </script>
+<body>
+
+<iframe
+src="../../app/index.html?c=robsonextecoetter&v=12">
+</iframe>
+
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./service-worker.js");
+}
+</script>
+
 </body>
 </html>
