@@ -1154,7 +1154,53 @@ const obs = document.getElementById('obs').value.trim();
     document.getElementById('pdfTotal').textContent = brl.format(totalFinal);
   }
 
-async function gerarPdfBlob(){
+
+    async function captureElementToCanvas(el){
+      if(!el) throw new Error("Elemento do PDF não encontrado.");
+
+      // Se estiver oculto (display:none), html2canvas gera branco.
+      // Vamos renderizar off-screen temporariamente.
+      const prev = {
+        display: el.style.display,
+        position: el.style.position,
+        left: el.style.left,
+        top: el.style.top,
+        visibility: el.style.visibility,
+        width: el.style.width
+      };
+
+      el.style.display = "block";
+      el.style.position = "fixed";
+      el.style.left = "-10000px";
+      el.style.top = "0";
+      el.style.visibility = "visible";
+      el.style.width = "794px"; // ~A4 em 96dpi
+
+      // espera layout + fontes
+      await new Promise(requestAnimationFrame);
+      if(document.fonts && document.fonts.ready){
+        try{ await document.fonts.ready; }catch(e){}
+      }
+
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false
+      });
+
+      // restaura
+      el.style.display = prev.display;
+      el.style.position = prev.position;
+      el.style.left = prev.left;
+      el.style.top = prev.top;
+      el.style.visibility = prev.visibility;
+      el.style.width = prev.width;
+
+      return canvas;
+    }
+
+async function gerarPdfRealBlob(){
   // Gera um PDF a partir da seção #pdf (sem abrir print)
   const pdfEl = document.getElementById('pdf');
   if(!pdfEl) throw new Error("Seção do PDF não encontrada.");
@@ -1179,7 +1225,7 @@ async function gerarPdfBlob(){
 
   try{
     // Renderiza em canvas
-    const canvas = await html2canvas(pdfEl, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+    const canvas = await captureElementToCanvas(pdfEl);
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
     const { jsPDF } = window.jspdf; // vindo do jspdf.umd.min.js
@@ -1256,10 +1302,30 @@ async function enviarPdfParaWhatsapp(){
 
   document.getElementById('btnAdd').addEventListener('click', addItem);
 
-  document.getElementById('btnPdf').addEventListener('click', async () => {
-  try{
-    fillPDF();
-    const blob = await gerarPdfBlob();
+  document.getElementById("btnPdf").addEventListener("click", async () => {
+      try{
+        const blob = await gerarPdfRealBlob();
+        const file = new File([blob], "proposta.pdf", { type: "application/pdf" });
+
+        // Abre o PDF para visualizar (melhor que baixar)
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+
+        // Tenta abrir a folha de compartilhamento (celular)
+        if(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })){
+          await navigator.share({
+            title: "Proposta Comercial",
+            text: "Segue a proposta em PDF.",
+            files: [file]
+          });
+        }
+
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      }catch(e){
+        alert("Erro ao gerar/compartilhar PDF: " + (e?.message || e));
+      }
+    });
+const blob = await gerarPdfBlob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
