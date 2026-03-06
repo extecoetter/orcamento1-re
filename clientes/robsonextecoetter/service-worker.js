@@ -8,7 +8,7 @@ const APP_ENTRY = `../../app/index.html?c=${SLUG}&v=${APP_V}`;
 
 const CORE = [
   "./",
-  "./index.html",
+  "./ios/index.html",
   "./manifest.json",
   "./config.js",
   "./logo.png",
