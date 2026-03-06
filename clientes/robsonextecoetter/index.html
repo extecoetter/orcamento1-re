@@ -1,72 +1,21 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>Orçamentos - Robson</title>
-
-<link rel="manifest" href="./manifest.json">
-<link rel="icon" href="./icons/icon-192.png">
-<link rel="apple-touch-icon" href="./icons/icon-192.png">
-
-<style>
-
-html,body{
-height:100%;
-margin:0;
-background:#0f172a;
-}
-
-iframe{
-border:0;
-width:100%;
-height:100%;
-}
-
-.version{
-position:fixed;
-top:6px;
-right:10px;
-font-size:11px;
-color:#94a3b8;
-font-weight:700;
-z-index:9999;
-}
-
-</style>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redirecionando...</title>
 </head>
-
-
 <body>
+  <script>
+    const cliente = "robson";
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
 
-
-<div class="version">
-BETA 0.1.11
-</div>
-
-
-<iframe
-src="../../app/index.html?c=robsonextecoetter&v=0.1.11">
-</iframe>
-
-
-
-<script>
-
-if ("serviceWorker" in navigator) {
-
-navigator.serviceWorker.register("./service-worker.js")
-.then(()=>console.log("SW registrado"))
-.catch(()=>console.log("SW erro"));
-
-}
-
-</script>
-
-
+    if (isIOS) {
+      window.location.href = "/ios/index.html?cliente=" + encodeURIComponent(cliente);
+    } else {
+      window.location.href = "/android/index.html?cliente=" + encodeURIComponent(cliente);
+    }
+  </script>
 </body>
 </html>
