@@ -710,7 +710,7 @@
   vertical-align:middle;
 }
 
-/* --- iOS PDF fine-tune (IOS 1.0) --- */
+/* --- iOS PDF fine-tune (IOS 1.0.1) --- */
 .pdf .top{
   padding: 14px 0 8px 0 !important;
 }
@@ -1009,7 +1009,7 @@
 
 <script>
   // === BETA CONFIG (edite aqui) ==========================================
-  window.APP_VERSION = "IOS 1.0";
+  window.APP_VERSION = "IOS 1.0.1";
   // =======================================================================
   try{ document.title = "Orçamento Climatização - " + window.APP_VERSION; }catch(e){}
 </script>
@@ -1019,7 +1019,7 @@
   <div class="wrap">
     <div class="appbar">
       <h1>Proposta Comercial - Climatização</h1>
-      <p>Adicione serviços e gere o PDF. <span class="beta-inline">IOS 1.0</span></p>
+      <p>Adicione serviços e gere o PDF. <span class="beta-inline">IOS 1.0.1</span></p>
     </div>
 
     <div class="section-title">👤 DADOS DO ORÇAMENTO</div>
@@ -1428,11 +1428,42 @@ function escapeHtml(s){
       .replaceAll("'","&#039;");
   }
 
+  function esperarLogoPdf(){
+    return new Promise(function(resolve){
+      try{
+        const logoEl = document.getElementById('pdfLogo');
+        if(!logoEl) return resolve();
+
+        const finalizar = function(){
+          try{
+            logoEl.removeEventListener('load', finalizar);
+            logoEl.removeEventListener('error', finalizar);
+          }catch(e){}
+          resolve();
+        };
+
+        if(logoEl.complete && logoEl.naturalWidth > 0){
+          return resolve();
+        }
+
+        logoEl.addEventListener('load', finalizar, { once:true });
+        logoEl.addEventListener('error', finalizar, { once:true });
+
+        setTimeout(finalizar, 1200);
+      }catch(e){
+        resolve();
+      }
+    });
+  }
+
   function fillPDF(){
 
 // Dados do instalador (config por cliente)
 const logoEl = document.getElementById('pdfLogo');
-if(logoEl && INSTALLER && INSTALLER.logo) logoEl.src = INSTALLER.logo;
+if(logoEl && INSTALLER && INSTALLER.logo){
+  logoEl.style.display = 'block';
+  logoEl.src = INSTALLER.logo + (INSTALLER.logo.indexOf('?') >= 0 ? '&' : '?') + 'v=' + encodeURIComponent(window.APP_VERSION || '');
+}
 
 const nomeInst = (INSTALLER && INSTALLER.nome) ? INSTALLER.nome : "";
 const whatsInst = (INSTALLER && INSTALLER.whats) ? INSTALLER.whats : "";
@@ -1511,6 +1542,7 @@ const obs = document.getElementById('obs').value.trim();
     try{
       syncParcelamentoToObs();
       if(typeof fillPDF === "function") fillPDF();
+      await esperarLogoPdf();
       window.print();
     }catch(e){
       console.log("[ERRO] gerar PDF (print):", e);
@@ -1581,11 +1613,12 @@ const obs = document.getElementById('obs').value.trim();
     }
   }
 
-  function onGerarPdfClick(ev){
+  async function onGerarPdfClick(ev){
     if(ev && ev.preventDefault) ev.preventDefault();
     try{
       syncParcelamentoToObs();
       if(typeof fillPDF === 'function') fillPDF();
+      await esperarLogoPdf();
       window.print();
     }catch(e){
       if(window.__betaShow) window.__betaShow('[ERRO] pdf: ' + (e.message||e));
