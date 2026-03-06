@@ -1,1 +1,1587 @@
 
+<!doctype html>
+
+<!-- =========================================================
+     ORÇAMENTO CLIMATIZAÇÃO — BETA
+     Arquivo: index.html (único)
+     Versão: BETA 0.1.50
+     Regras:
+     - Mudanças devem ser "cirúrgicas"
+     - Evitar mexer em layout do PDF sem necessidade
+     - Patch iPhone: não usar crypto.randomUUID direto
+     - Badge/debug NÃO devem ir para o PDF (print)
+   ========================================================= -->
+
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Proposta Comercial - Climatização</title>
+
+  
+<!-- PWA (BETA 0.1.x) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f6feb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Orçamento Climatização">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<!-- /PWA -->
+<style>
+    :root{
+      --bg:#f3f6fb;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --brand:#1f6feb;
+      --brand-strong:#0b5ed7;
+      --shadow: 0 10px 30px rgba(17,24,39,.08);
+      --radius:18px;
+      --pdf-soft-blue:#eaf2ff;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .wrap{
+      max-width: 920px;
+      margin: 18px auto 90px;
+      padding: 0 14px;
+    }
+     /* remove URL do rodapé do Safari (PDF iPhone) */
+    @media print {
+
+     html, body{
+      height:auto;
+     }
+
+     .pdf{
+       padding-bottom:40px;
+      }
+
+   }
+
+    /* APP TOP BAR (SEM LOGO) */
+    .appbar{
+      background: linear-gradient(180deg, #2f80ff 0%, #1f6feb 100%);
+      color:#fff;
+      padding: 14px;
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+    .appbar h1{
+      margin:0;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing:.2px;
+    }
+    .appbar p{margin:6px 0 0; opacity:.9; font-size: 13px}
+
+    .section-title{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin: 14px 2px 10px;
+      font-weight:900;
+      color: #0f172a;
+      letter-spacing:.3px;
+    }
+    .section-title small{
+      margin-left:auto;
+      font-weight:800;
+      color: var(--brand);
+      background:#eaf2ff;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .grid{ display:grid; gap:10px; }
+    .grid.cols-2{ grid-template-columns: 1fr 1fr; }
+    @media (max-width:700px){
+      .grid.cols-2{ grid-template-columns: 1fr; }
+    }
+
+    label{
+      display:block;
+      font-size: 12px;
+      font-weight:900;
+      color: var(--muted);
+      margin: 2px 0 6px;
+      text-transform: uppercase;
+      letter-spacing:.4px;
+    }
+    input, textarea, select{
+      width:100%;
+      padding: 14px 14px;
+      border-radius: 14px;
+      border:1px solid var(--line);
+      outline:none;
+      font-size: 16px;
+      background:#fff;
+    }
+    textarea{ min-height: 90px; resize: vertical; }
+
+    /* SERVICES */
+    .service{
+      border:1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      background:#fff;
+      display:grid;
+      gap:10px;
+    }
+    .service-top{
+      display:grid;
+      grid-template-columns: 1fr 44px;
+      gap:10px;
+      align-items:center;
+    }
+    .trash{
+      width:44px;height:44px;
+      border-radius: 14px;
+      border:1px solid var(--line);
+      background:#fff;
+      cursor:pointer;
+      font-size: 18px;
+    }
+    .service-bottom{
+      display:grid;
+      grid-template-columns: 1fr 140px;
+      gap:10px;
+      align-items:center;
+    }
+    @media (max-width:440px){
+      .service-bottom{ grid-template-columns: 1fr; }
+    }
+
+    .money{ position:relative; }
+    .money span{
+      position:absolute;
+      left:14px;
+      top:50%;
+      transform: translateY(-50%);
+      font-weight:900;
+      color: var(--muted);
+    }
+    .money input{
+      padding-left: 48px;
+      font-weight: 900;
+    }
+
+    .qty{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      border:1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px;
+      height: 52px;
+    }
+    .qty button{
+      width:44px;height:38px;
+      border-radius: 12px;
+      border:1px solid var(--line);
+      background:#fff;
+      font-size: 18px;
+      cursor:pointer;
+      font-weight:900;
+    }
+    .qty b{ min-width: 22px; text-align:center; display:inline-block; }
+
+    .add{
+      border:2px dashed #c7d2fe;
+      color:#334155;
+      font-weight:900;
+      background:#f8fafc;
+      width:100%;
+      border-radius: 18px;
+      padding: 16px;
+      cursor:pointer;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+      align-items:center;
+      letter-spacing:.2px;
+      margin-top: 10px;
+    }
+    .add .plus{
+      width:28px;height:28px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      display:grid;
+      place-items:center;
+      background:#fff;
+      font-weight:900;
+    }
+
+    .totals{
+      display:grid;
+      gap:8px;
+      margin-top: 12px;
+      border-top:1px solid var(--line);
+      padding-top: 12px;
+    }
+    .totals .grand{
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      font-weight: 1000;
+      color:#0b1220;
+      margin-top: 4px;
+    }
+    .totals .grand .value{
+      font-size: 30px;
+      letter-spacing:.3px;
+    }
+
+    /* ACTION BAR */
+    .actions{
+      position: fixed;
+      left:0; right:0; bottom:0;
+      background: rgba(243,246,251,.9);
+      backdrop-filter: blur(10px);
+      border-top:1px solid var(--line);
+      padding: 10px 14px;
+    }
+    .actions .inner{
+      max-width:920px;
+      margin:0 auto;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .btn{
+      flex:1;
+      padding: 14px 14px;
+      border-radius: 16px;
+      border:1px solid var(--line);
+      cursor:pointer;
+      font-weight: 900;
+      font-size: 15px;
+      background:#fff;
+    }
+    .btn.primary{
+      background: var(--brand);
+      border-color: transparent;
+      color:#fff;
+    }
+
+    /* PDF (PRINT) */
+    .pdf{
+      display:none;
+      padding: 12px;
+      background:#fff;
+      color:#0b1220;
+    }
+    /* header accent */
+    .pdf .top::after{
+      content:"";
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:-1px;
+      height:2px;
+      background: rgba(11,94,215,.35);
+    }
+
+    .pdf .top{
+      position:relative;
+      border-bottom: 2px solid #eef2f7;
+      padding: 6px 0 10px 0;
+    }
+    
+    .pdf .logoRow{
+      display:flex;
+      justify-content:flex-start;
+      align-items:flex-start;
+      margin-top: -18px; /* sobe o logo */
+    }
+    .pdf .logoRow img{
+      width: 330px; /* -50 */
+      height: 190px; /* -50 */
+      object-fit: contain;
+      display:block;
+      margin-left: -10px; /* mais pra esquerda */
+      margin-top: -10px;  /* mais pra cima */
+    }
+
+    .pdf .headRow{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      align-items:baseline;
+      margin-top:-28px; /* aproxima da logo */
+    }
+    
+    .pdf .pdfTitleCenter{
+      margin: 12px 0 10px 0;
+      font-size: 18px; /* -2px */
+      font-weight: 1000;
+      text-align:center;
+      color: #0b1220 !important;
+      letter-spacing:.2px;
+    }
+.pdf .headRow .title{
+      margin:0;
+      font-size: 20px;
+      font-weight: 1000;
+      text-align:center; /* centro da página */
+      width:100%;
+      color:#0b1220;
+    }
+    .pdf .datebox small{
+      display:block;
+      color: var(--brand-strong);
+      font-weight:1000;
+      letter-spacing:.4px;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+    .pdf .datebox #pdfData{
+      font-size: 14px;
+      font-weight: 1000;
+    }
+
+    .pdf .datebox .validadeLine{
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 900;
+      color:#0b1220;
+    }
+    .pdf .datebox .validadeLine .k{ color: var(--brand-strong); font-weight: 1000; }
+
+    .pdf .instaladorBox{
+      color:#0b1220;
+    }
+    .pdf .instaladorBox .k{
+      color: var(--brand-strong);
+      font-weight:1000;
+      margin-right:4px;
+    }
+    .pdf .instaladorBox .v{
+      font-weight:900;
+    }
+
+    .pdf .instaladorBox{
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #eef2f7;
+      font-size: 12px;
+      font-weight: 900;
+      color:#0b1220;
+    }
+
+    .pdf .instRow{
+      display:flex;
+      gap:14px;
+      justify-content:space-between;
+      align-items:baseline;
+      flex-wrap:wrap;
+    }
+
+    .pdf .instLine{ margin-top: 4px; }
+    .pdf .instLine .k{ color: var(--brand-strong); font-weight: 1000; }
+    .pdf .instLine .v{ color:#0b1220; font-weight: 900; }
+
+    .pdf .iconWA{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:16px;
+      height:16px;
+      border-radius: 999px;
+      color:#16a34a;
+      margin: 0 6px 0 6px;
+      vertical-align: -2px;
+    }
+    .pdf .nubankIcon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:18px;
+      height:18px;
+      border-radius: 6px;
+      background:#7d2ae8;
+      color:#fff;
+      font-weight:1000;
+      font-size: 11px;
+      margin-right: 8px;
+      text-transform: lowercase;
+    }
+    .pdf .bankLine{ display:flex; align-items:center; gap:0; }
+.pdf .datebox{
+      text-align:right;
+      font-weight:1000;
+      color:#111827;
+      white-space:nowrap;
+    }
+    .pdf .datebox small{
+      display:block;
+      color: var(--brand-strong);
+      font-weight:1000;
+      letter-spacing:.4px;
+      text-transform: uppercase;
+      font-size: 10px; /* menor */
+    }
+    .pdf .datebox div{
+      font-size: 12px; /* menor */
+    }
+
+    .pdf .clientbox{
+      border:1px solid #dbeafe;
+      background: var(--pdf-soft-blue);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 14px;
+      min-height: 90px;
+      box-shadow: 0 6px 18px rgba(17,24,39,.06);
+}
+    
+    .pdf .lblBlue{
+      color: var(--brand-strong);
+      font-weight: 1000;
+    }
+.pdf .clientbox small{
+      color: var(--brand-strong);
+      font-weight: 1000;
+      text-transform: uppercase;
+      letter-spacing:.4px;
+      display:block;
+      margin-bottom: 6px;
+    }
+
+    .pdf table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top: 16px;
+      font-size: 14px;
+    }
+    .pdf th{
+      text-align:left;
+      color: var(--brand-strong); /* azul forte */
+      border-bottom:2px solid #0f172a;
+      padding: 10px 0;
+      font-weight: 1000;
+      letter-spacing:.2px;
+    }
+    .pdf td{
+      padding: 12px 0;
+      border-bottom:1px solid #eef2f7;
+      color:#334155;
+      font-weight:800;
+    }
+    .pdf td:nth-child(2), .pdf th:nth-child(2){ width:70px; text-align:center; }
+    .pdf td:nth-child(3), .pdf th:nth-child(3){ width:140px; text-align:right; }
+
+    .pdf .sum{
+      margin-top: 16px;
+      display:flex;
+      justify-content:flex-end;
+    }
+    .pdf .sum .panel{
+      width: 320px;
+      border-top: 1px solid #eef2f7;
+      padding-top: 12px;
+      text-align:right;
+      font-weight:1000;
+    }
+    .pdf .sum .panel .line{
+      display:flex;
+      justify-content:space-between;
+      color:#667085;
+      margin-bottom: 6px;
+      font-weight:900;
+    }
+
+    .pdf .sum .panel .grand{
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      margin-top: 6px;
+      color:#0b1220;
+      font-weight: 1100;
+    }
+    .pdf .sum .panel .grand b{
+      font-size: 26px;
+      letter-spacing:.3px;
+    }
+
+    .pdf .bottom{
+      margin-top: 10px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:10px;
+    }
+    .pdf .bottom .box{
+      border:1px solid #eef2f7;
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 58px;
+      width:100%;
+      text-align:left;
+      background:#fff;
+    }
+
+    .pdf .bottom .value{ text-align:left; }
+    .pdf .bottom .box.pay .value{
+      font-size: 12px;
+      font-weight: 800;
+      color:#334155;
+      text-align:left;
+    }
+    .pdf .bottom .box.obs .value{ font-size: 14px; font-weight:800; color:#334155; white-space:pre-wrap; }
+
+
+    .pdf .bottom .box small{
+      color: var(--brand-strong); /* azul forte */
+      font-weight: 1000;
+      text-transform: uppercase;
+      letter-spacing:.4px;
+      display:block;
+      margin-bottom: 6px;
+    }
+
+    .pdf .bottom .box.pay small{ font-size: 10px; }
+
+
+    /* rodapé removido (sem texto) */
+    .pdf .footer{ display:none; }
+
+    @media print{
+  /* Garantir logo no PDF (print) */
+  #logo, .header img{
+    display:block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    max-width: 280px !important;
+    height: auto !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+      body{ background:#fff; }
+      .wrap, .actions{ display:none !important; }
+      .pdf{ display:block !important; }
+      @page{ margin: 14mm; }
+    }
+  
+/* --- FIXES (v12-layout) --- */
+.pdf .headRow{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items:start;
+  margin-top:-22px; /* aproxima do logo */
+}
+.pdf .datebox{
+  text-align:right;
+  font-weight:1000;
+  color:#111827;
+  white-space:nowrap;
+}
+.pdf .datebox small{
+  color: var(--brand-strong);
+  font-weight:1000;
+  letter-spacing:.4px;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+.pdf .datebox #pdfData{ font-size: 12px; font-weight: 1000; }
+.pdf .datebox .validadeLine{ margin-top: 6px; font-size: 12px; font-weight: 900; color:#0b1220; }
+.pdf .datebox .validadeLine .k{ color: var(--brand-strong); font-weight: 1000; }
+.pdf .instLine{ margin-top: 4px; }
+.pdf .instLine .k{ color: var(--brand-strong); font-weight: 1000; }
+.pdf .instLine .v{ color:#0b1220; font-weight: 900; }
+.pdf .pdfTitleCenter{ margin: 12px 0 10px 0; }
+.pdf .clientbox{ margin-top: 12px; }
+
+  
+    /* --- SURGICAL PDF LAYOUT FIXES (v12-fix3) --- */
+    .pdf .pdfTitleCenter{
+      color: var(--brand-strong) !important;
+      font-size: 18px !important; /* 2pt smaller vs common 20px-ish heading */
+      font-weight: 1000 !important;
+      margin: 14px 0 10px 0 !important;
+      text-align:center;
+    }
+
+    /* prevent header overlap (installer vs date box) */
+    .pdf .headRow{
+      margin-top: 6px !important;  /* remove negative that caused overlap */
+      grid-template-columns: 1fr auto !important;
+      gap: 18px !important;
+    }
+    .pdf .instaladorBox{
+      max-width: 520px;
+    }
+    .pdf .datebox{
+      min-width: 160px;
+    }
+
+    /* keep Observações & Forma de Pagamento aligned left under TOTAL */
+    .pdf .obsBox, .pdf .payBox, .pdf .obsbox, .pdf .paybox{
+      text-align:left !important;
+      align-self:flex-start !important;
+    }
+    
+  
+    .pdf .gapTel{ display:inline-block; width:18px; }
+  
+/* total value smaller (-2) */
+.pdf #pdfTotalGeral,
+.pdf #totalGeralValor,
+.pdf .totalValue,
+.pdf .totalGeralValor,
+.pdf .valorTotalGeral{
+  font-size: 30px !important;
+}
+
+  
+/* --- SURGICAL PDF LAYOUT FIXES (v12-fix5) --- */
+
+/* tighter installer lines: Nome / Whats (no blank space) */
+.pdf .instRow{ gap: 0 !important; }
+.pdf .instLine{ margin-top: 0 !important; line-height: 1.15 !important; }
+.pdf .instLine + .instLine{ margin-top: 2px !important; }
+
+/* remove extra separator above installer (keep only overall layout clean) */
+.pdf .instaladorBox{
+  border-top: none !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* keep "Chave Pix:" together and on one line */
+.pdf .bankLine .k{ white-space: nowrap !important; }
+.pdf .bankLine{ margin-top: 6px !important; }
+
+/* validade da proposta: slightly smaller */
+.pdf .datebox .validadeLine{ font-size: 11px !important; }
+
+/* enforce Proposta Comercial title black */
+.pdf .pdfTitleCenter{ color:#0b1220 !important; }
+
+/* Total geral value smaller (-4 total) */
+.pdf #pdfTotalGeral,
+.pdf #totalGeralValor,
+.pdf .totalValue,
+.pdf .totalGeralValor,
+.pdf .valorTotalGeral{
+  font-size: 28px !important;
+}
+
+  
+/* --- BETA 0.1.38: ocultar dados do instalador no PDF (só CSS) --- */
+.pdf .instaladorBox{ display:none !important; }
+
+  
+}
+
+  /* --- BETA: não imprimir badge/debug no PDF --- */
+@media print{
+  #betaBadge, #betaDebug{ display:none !important; }
+}
+
+  
+.beta-inline{
+  display:inline-block;
+  margin-left:8px;
+  padding:2px 8px;
+  border-radius:999px;
+  background:#e53935;
+  color:#ffffff;
+  font-weight:700;
+  font-size:12px;
+  vertical-align:middle;
+}
+
+/* --- iOS PDF fine-tune (1.0.6a) --- */
+.pdf .top{
+  padding: 0 0 8px 0 !important;
+}
+.pdf .logoRow{
+  margin-top: -30px !important;
+}
+.pdf .logoRow img{
+  width: 310px !important;
+  height: 170px !important;
+  margin-top: -24px !important;
+}
+.pdf .headRow{
+  margin-top: -10px !important;
+}
+.pdf .sum .panel .grand{
+  font-size: 10px !important;
+}
+.pdf .sum .panel .grand b{
+  font-size: 24px !important;
+}
+.pdf .bottom .box{
+  padding: 12px !important;
+}
+.pdf .bottom .box small{
+  font-size: 9px !important;
+  margin-bottom: 4px !important;
+}
+.pdf .bottom .box.obs .value{
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+.pdf .bottom .box.pay .value{
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+}
+
+</style>
+
+<script>
+  // BETA DEBUG (0.1.37) - mostra erros na tela
+  (function(){
+    function ensureBox(){
+      var box = document.getElementById('betaDebug');
+      if(box) return box;
+      box = document.createElement('div');
+      box.id = 'betaDebug';
+      box.style.cssText = 'position:fixed;left:8px;right:8px;top:8px;max-height:32vh;overflow:auto;z-index:99999;background:rgba(0,0,0,.88);color:#fff;font:12px/1.35 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial;padding:10px;border-radius:12px;display:none;white-space:pre-wrap;';
+      function attach(){ try{ (document.body||document.documentElement).appendChild(box); }catch(e){} }
+      if(document.body) attach();
+      document.addEventListener('DOMContentLoaded', attach, { once:true });
+      return box;
+    }
+    function show(msg){
+      var box = ensureBox();
+      box.style.display = 'block';
+      box.textContent += (box.textContent ? "\n" : "") + msg;
+    }
+    window.__betaShow = show;
+    window.addEventListener('error', function(e){
+      try{
+        var where = (e && e.filename) ? ("\n" + e.filename + ":" + e.lineno) : "";
+        show("[ERRO] " + (e && e.message ? e.message : "script error") + where);
+      }catch(_){}
+    });
+    window.addEventListener('unhandledrejection', function(e){
+      try{
+        var r = e && e.reason ? e.reason : null;
+        show("[PROMISE] " + (r && r.message ? r.message : String(r)));
+      }catch(_){}
+    });
+  })();;
+
+
+  // ===== Compartilhar PDF (seguro) =======================================
+  // Gera um PDF em blob (jsPDF) e abre o compartilhamento do sistema (Android/iOS quando suportado).
+  // Se o aparelho não suportar compartilhar arquivo, cai em fallback (abre PDF e mostra instrução).
+  let __jspdfLoading2 = null;
+
+  function loadJsPdf2(){
+    if(window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+    if(__jspdfLoading2) return __jspdfLoading2;
+    __jspdfLoading2 = new Promise(function(resolve, reject){
+      var s = document.createElement("script");
+      s.src = "libs/jspdf.umd.min.js";
+      s.onload = function(){ resolve(); };
+      s.onerror = function(){ reject(new Error("Não consegui carregar libs/jspdf.umd.min.js")); };
+      document.head.appendChild(s);
+    });
+    return __jspdfLoading2;
+  }
+
+  function loadLogoJpegDataUrl(){
+    return new Promise(function(resolve, reject){
+      var img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = function(){
+        try{
+          var w = img.naturalWidth || img.width;
+          var h = img.naturalHeight || img.height;
+          var c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          var ctx = c.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0,0,w,h);
+          ctx.drawImage(img,0,0);
+          resolve(c.toDataURL("image/jpeg", 0.92));
+        }catch(e){
+          reject(new Error("Falha ao converter logo."));
+        }
+      };
+      img.onerror = function(){ reject(new Error("Logo não carregou (logo.png).")); };
+      img.src = "logo.png?v=" + encodeURIComponent(window.APP_VERSION || "");
+    });
+  }
+
+  function money(v){
+    return brl.format(Number(v) || 0);
+  }
+
+  async function gerarPdfBlobCompartilhar(){
+    await loadJsPdf2();
+    if(!window.jspdf || !window.jspdf.jsPDF) throw new Error("jsPDF não disponível.");
+
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({ orientation:"p", unit:"pt", format:"a4" });
+
+    var pageW = doc.internal.pageSize.getWidth();
+    var pageH = doc.internal.pageSize.getHeight();
+    var margin = 42;
+    var contentW = pageW - margin*2;
+
+    // Logo (se der erro, segue sem)
+    try{
+      var logo = await loadLogoJpegDataUrl();
+      doc.addImage(logo, "JPEG", margin, margin-12, 240, 100, undefined, "FAST");
+    }catch(e){}
+
+    var y = margin + 86;
+
+    var clienteEl = document.getElementById("cliente");
+    var telEl = document.getElementById("telefone");
+    var endEl = document.getElementById("endereco");
+    var cliente = clienteEl ? (clienteEl.value || "").trim() : "";
+    var telefone = telEl ? (telEl.value || "").trim() : "";
+    var endereco = endEl ? (endEl.value || "").trim() : "";
+
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(12);
+    doc.setTextColor(11,94,215);
+    doc.text("Cliente:", margin, y);
+    doc.setTextColor(17,24,39);
+    doc.text(cliente, margin+62, y);
+
+    y += 18;
+    doc.setTextColor(11,94,215);
+    doc.text("Tel:", margin, y);
+    doc.setTextColor(17,24,39);
+    doc.text(telefone, margin+30, y);
+
+    y += 18;
+    if(endereco){
+      doc.setTextColor(11,94,215);
+      doc.text("End:", margin, y);
+      doc.setTextColor(17,24,39);
+      doc.setFont("helvetica","normal");
+      var endLines = doc.splitTextToSize(endereco, contentW - 40);
+      doc.text(endLines, margin+34, y);
+      y += endLines.length * 12;
+    }
+
+    y += 22;
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(14);
+    doc.setTextColor(11,18,32);
+    doc.text("Proposta Comercial", pageW/2, y, { align:"center" });
+
+    y += 26;
+    doc.setFontSize(10);
+    doc.setTextColor(11,94,215);
+    doc.text("DESCRIÇÃO DO SERVIÇO", margin, y);
+    doc.text("QTD", margin + contentW - 160, y, { align:"center" });
+    doc.text("SUBTOTAL", margin + contentW, y, { align:"right" });
+
+    y += 8;
+    doc.setDrawColor(15,23,42);
+    doc.setLineWidth(1.2);
+    doc.line(margin, y, pageW - margin, y);
+    y += 14;
+
+    doc.setFont("helvetica","normal");
+    doc.setTextColor(51,65,85);
+    doc.setLineWidth(0.6);
+    doc.setDrawColor(238,242,247);
+
+    var total = 0;
+    var items = (window.state && window.state.items) ? window.state.items : [];
+    for(var i=0;i<items.length;i++){
+      var it = items[i] || {};
+      var desc = it.desc ? String(it.desc) : "Serviço";
+      var qty = it.qty ? Number(it.qty) : 1;
+      var price = it.price ? Number(it.price) : 0;
+      var sub = qty * price;
+      total += sub;
+
+      if(y > pageH - margin - 180){
+        doc.addPage();
+        y = margin;
+      }
+
+      var descLines = doc.splitTextToSize(desc, contentW - 210);
+      doc.text(descLines, margin, y);
+
+      doc.setFont("helvetica","bold");
+      doc.text(String(qty), margin + contentW - 160, y, { align:"center" });
+      doc.text(money(sub), margin + contentW, y, { align:"right" });
+      doc.setFont("helvetica","normal");
+
+      y += Math.max(18, descLines.length * 12);
+      doc.line(margin, y, pageW - margin, y);
+      y += 12;
+    }
+
+    // desconto e observações (inclui parcelamento já sincronizado)
+    var descEl = document.getElementById("desconto");
+    var desconto = parseBRL(descEl ? (descEl.value||"") : "");
+    var totalFinal = Math.max(0, total - desconto);
+
+    y += 10;
+    doc.setFont("helvetica","bold");
+    doc.setTextColor(102,112,133);
+    doc.text("Desconto:", margin + contentW - 300, y);
+    doc.text(money(desconto), margin + contentW, y, { align:"right" });
+
+    y += 22;
+    doc.setFontSize(10);
+    doc.setTextColor(11,18,32);
+    doc.text("TOTAL GERAL", margin + contentW - 300, y);
+    doc.setFontSize(14);
+    doc.text(money(totalFinal), margin + contentW, y, { align:"right" });
+
+    var obsEl = document.getElementById("obs");
+    var pagEl = document.getElementById("pagamento");
+    var obs = obsEl ? (obsEl.value || "").trim() : "";
+    var pagamento = pagEl ? (pagEl.value || "").trim() : "";
+
+    y += 34;
+    doc.setFontSize(8);
+    doc.setTextColor(11,94,215);
+    doc.setFont("helvetica","bold");
+    doc.text("OBSERVAÇÕES", margin, y);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(9);
+    doc.setTextColor(51,65,85);
+    var obsLines = obs ? doc.splitTextToSize(obs, contentW) : [""];
+    doc.text(obsLines, margin, y+14);
+
+    y += 44 + obsLines.length * 10;
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(7);
+    doc.setTextColor(11,94,215);
+    doc.text("FORMA DE PAGAMENTO", margin, y);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(8);
+    doc.setTextColor(51,65,85);
+    var payLines = pagamento ? doc.splitTextToSize(pagamento, contentW) : [""];
+    doc.text(payLines, margin, y+14);
+
+    return doc.output("blob");
+  }
+
+  async function compartilharPdf(){
+    syncParcelamentoToObs();
+    var blob = await gerarPdfBlobCompartilhar();
+    var file = new File([blob], "proposta.pdf", { type:"application/pdf" });
+
+    if(navigator.share && navigator.canShare && navigator.canShare({ files: [file] })){
+      await navigator.share({ title:"Proposta Comercial", files:[file] });
+      return;
+    }
+
+    // Fallback: abre o PDF e orienta
+    var url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 8000);
+    alert("Seu aparelho não permite compartilhar PDF diretamente. Abri o PDF: use o botão Compartilhar do visualizador e escolha WhatsApp.");
+  }
+  // =======================================================================
+
+</script>
+
+
+<script>
+  // === BETA CONFIG (edite aqui) ==========================================
+  window.APP_VERSION = "0.1.38";
+  // =======================================================================
+  try{ document.title = "Orçamento Climatização - BETA " + window.APP_VERSION; }catch(e){}
+</script>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="appbar">
+      <h1>Proposta Comercial - Climatização</h1>
+      <p>Adicione serviços e gere o PDF. <span class="beta-inline">BETA 0.1.38</span></p>
+    </div>
+
+    <div class="section-title">👤 DADOS DO ORÇAMENTO</div>
+    <div class="card">
+      <div class="grid cols-2">
+        <div>
+          <label>Nome do Cliente</label>
+          <input id="cliente" placeholder="Nome do Cliente" />
+        </div>
+        <div>
+          <label>Telefone / WhatsApp</label>
+          <input id="telefone" placeholder="(DD) 9XXXX-XXXX" inputmode="tel" />
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <label>Endereço</label>
+        <input id="endereco" placeholder="Endereço (Rua, Nº, Bairro)" />
+      </div>
+
+      <div style="margin-top:10px">
+        <label>Data</label>
+        <input id="data" type="date" />
+      </div>
+
+      <div style="margin-top:10px">
+        <label>Validade da proposta</label>
+        <input id="validade" placeholder="Validade da proposta (editável)" />
+      </div>
+    </div>
+
+    <div class="section-title">🛠️ SERVIÇOS <small>Itens</small></div>
+    <div class="card">
+      <div id="servicesList" class="grid" style="gap:12px"></div>
+
+      <button class="add" id="btnAdd" type="button">
+        <span class="plus">+</span> ADICIONAR ITEM
+      </button>
+
+      <div style="margin-top:12px">
+        <label>Observações</label>
+        <textarea id="obs" placeholder="Observações (EX: instalação padrão, 3M de cobre, vácuo no sistema...)"></textarea>
+
+<div class="grid cols-2" style="margin-top:10px">
+  <div>
+    <label>Parcelamento no cartão?</label>
+    <select id="parcelamento">
+      <option value="">Não</option>
+      <option value="sim">Sim</option>
+    </select>
+  </div>
+  <div id="parcelasBox" style="display:none">
+    <label>Até quantas vezes?</label>
+    <select id="parcelas">
+      <option>2</option><option>3</option><option>4</option><option>5</option>
+      <option>6</option><option>7</option><option>8</option><option>9</option>
+      <option selected>10</option><option>12</option>
+    </select>
+  </div>
+</div>
+
+      </div>
+
+      <div class="totals">
+        <div class="grand">
+          <span>TOTAL GERAL</span>
+          <span class="value" id="totalLabel">R$ 0,00</span>
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <label>Desconto (R$)</label>
+        <div class="money">
+          <span>R$</span>
+          <input id="desconto" inputmode="decimal" placeholder="0,00" />
+        </div>
+      </div>
+
+
+      <div style="margin-top:12px">
+        <label>Forma de pagamento</label>
+        <select id="pagamento">
+          <option value="">Selecione...</option>
+          <option>Dinheiro/Pix</option>
+          <option>Cartão</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF -->
+  <section class="pdf" id="pdf">
+<div class="top">
+  <div class="logoRow">
+    <img id="pdfLogo" src="logo.png" alt="logo" onerror="this.style.display='none'"/>
+  </div>
+
+  <div class="headRow">
+    <div class="instaladorBox">
+  <div class="instRow">
+    <div class="instLine">
+      <span class="k">Nome:</span>
+      <span class="v">Robson Andre Extecoetter</span>
+    </div>
+
+    <div class="instLine">
+      <span class="k">Whats:</span>
+      <span class="v whatsappLine">
+        <svg viewBox="0 0 24 24" width="14" height="14" style="margin-right:6px; vertical-align:-2px;">
+          <path fill="#16a34a" d="M20.5 11.9c0-4.7-3.9-8.6-8.6-8.6S3.3 7.2 3.3 11.9c0 1.5.4 2.9 1.1 4.1L3 21l5.1-1.3c1.2.7 2.6 1.1 3.9 1.1 4.7 0 8.5-3.9 8.5-8.6Z"/>
+        </svg>
+        <span id="pdfWhatsFix">(14) 99707-3447</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="instLine bankLine"><span class="k">Chave Pix:</span> <span class="v">14 99707 3447 / Robson A Extecoetter</span></div>
+</div>
+
+        <div class="datebox">
+      <small>Data de emissão</small>
+      <div id="pdfData"></div>
+      <div class="validadeLine"><span class="k">Validade da proposta:</span> <span id="pdfValidade"></span></div>
+    </div>
+  </div>
+</div>
+    <div class="clientbox">
+      <div id="pdfClienteLine" style="font-weight:1000; color:#111827"></div>
+      <div id="pdfEndereco" style="margin-top:6px; color:#334155; font-weight:800"></div>
+    </div>
+
+    
+    <div class="pdfTitleCenter">Proposta Comercial</div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>DESCRIÇÃO DO SERVIÇO</th>
+          <th>QTD</th>
+          <th>SUBTOTAL</th>
+        </tr>
+      </thead>
+      <tbody id="pdfTbody"></tbody>
+    </table>
+
+    <div class="sum">
+      <div class="panel">
+        <div class="line"><span>Desconto:</span><span id="pdfDesconto">R$ 0,00</span></div>
+        <div class="grand"><span>TOTAL GERAL</span><b id="pdfTotal">R$ 0,00</b></div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="box obs">
+        <small>Observações</small>
+        <div class="value" id="pdfObs"></div>
+      </div>
+      <div class="box pay">
+        <small>Forma de pagamento</small>
+        <div class="value" id="pdfPagamento"></div>
+      </div>
+    </div>
+
+    <div class="footer"></div>
+  </section>
+
+  
+<div class="actions">
+  <div class="inner">
+    <button class="btn" id="btnLimpar" type="button" onclick="onLimparClick(event)">Limpar</button>
+    <button class="btn primary" id="btnCompartilharPDF" type="button" onclick="compartilharPDF(event)">Gerar PDF</button>
+  </div>
+</div>
+
+<!-- Config por cliente (coloque um config.js dentro da pasta do cliente) -->
+<script>
+  // Se existir um arquivo "config.js" na mesma pasta, ele deve definir: window.CLIENT_CONFIG = { installer: {...}, logo: "logo.png" }
+  window.CLIENT_CONFIG = window.CLIENT_CONFIG || null;
+</script>
+<script src="config.js"></script>
+<script>
+  // Fallback: se não existir config.js, usa este padrão
+  const INSTALLER = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) ? window.CLIENT_CONFIG.installer : {
+    nome: "Robson Andre Extecoetter",
+    whats: "(14) 99707-3447",
+    pix: "14 99707 3447 / Robson A Extecoetter",
+    logo: "logo.png"
+  };
+</script>
+
+<script>
+  const brl = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
+
+  function parseBRL(str){
+    if(!str) return 0;
+    const s = String(str).replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',', '.');
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function todayISO(){
+    const d = new Date();
+    const tzOff = d.getTimezoneOffset() * 60000;
+    return new Date(Date.now()-tzOff).toISOString().slice(0,10);
+  }
+
+  const PRESETS = [
+    { name: "Instalação Split 9000 a a12000 BTUs", price: 650 },
+    { name: "Instalação Split 18000 a 24000 BTUs", price: 800 },
+    { name: "Limpeza e Higienização Split", price: 180 },
+    { name: "Lavagem Completa (Desmontagem do Equipamento)", price: 350 },
+    { name: "Instalação Piso Teto / Cassete", price: 1200 },
+    { name: "Instalação Multi-Split (Por Evaporadora)", price: 450 },
+    { name: "Desinstalação de Equipamento", price: 250 },
+    { name: "Aplicaçao de Vácuo no Sistema", price: 180 },
+    { name: "Troca de Componente Eletronico", price: 300 },
+    { name: "Visita Técnica / Diagnostico", price: 150 },
+    { name: "Pressurizaçao com Nitrogenio", price: 200 },
+    { name: "Carga de Gás", price: 200 },
+    { name: "Limpeza Química (Desmontagem Completa)", price: 350 },
+    { name: "PMOC", price: 350 },
+    { name: "Solda de Tubo", price: 200 },
+    { name: "Outros Serviços", price: 100 },
+  ];
+
+  const state = { items: [] };
+  const listEl = document.getElementById('servicesList');
+  // === BETA PATCH START: iPhone UID ==================================
+
+
+// iPhone/Safari: crypto.randomUUID pode não existir
+function uid(){
+  try{
+    if(window.crypto && typeof crypto.randomUUID === 'function') return uid();
+  }  // === BETA PATCH END: iPhone UID ====================================
+catch(e){}
+  return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+
+  function addItem(){
+    const item = {
+      id: uid(),
+      presetIndex: -1,
+      desc: "",
+      price: 0,
+      qty: 1
+    };
+    state.items.push(item);
+    renderItems();
+    recalc();
+  }
+
+  function removeItem(id){
+    state.items = state.items.filter(i => i.id !== id);
+    renderItems();
+    recalc();
+  }
+
+  function setItem(id, patch){
+    const it = state.items.find(i => i.id === id);
+    if(!it) return;
+    Object.assign(it, patch);
+    recalc();
+  }
+
+  function renderItems(){
+    listEl.innerHTML = "";
+    if(state.items.length === 0){
+      const empty = document.createElement('div');
+      empty.style.color = "#6b7280";
+      empty.style.fontWeight = "800";
+      empty.style.padding = "6px 2px";
+      empty.textContent = "Nenhum serviço adicionado. Clique em “ADICIONAR ITEM”.";
+      listEl.appendChild(empty);
+      return;
+    }
+
+    state.items.forEach((it) => {
+      const div = document.createElement('div');
+      div.className = "service";
+
+      div.innerHTML = `
+        <div class="service-top">
+          <select aria-label="Serviço">
+            <option value="-1">${it.desc ? it.desc : "Selecione..."}</option>
+            ${PRESETS.map((p, idx) => `<option value="${idx}">${p.name}</option>`).join('')}
+          </select>
+          <button class="trash" title="Remover">🗑️</button>
+        </div>
+
+        <div class="service-bottom">
+          <div class="money">
+            <span>R$</span>
+            <input inputmode="decimal" placeholder="0,00" value="${(it.price).toFixed(2).replace('.', ',')}" />
+          </div>
+
+          <div class="qty" aria-label="Quantidade">
+            <button data-act="minus" type="button" aria-label="Diminuir">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M6 12h12"></path>
+              </svg>
+            </button>
+            <b>${it.qty}</b>
+            <button data-act="plus" type="button" aria-label="Aumentar">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M12 6v12"></path>
+                <path d="M6 12h12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+
+      const sel = div.querySelector('select');
+      const trash = div.querySelector('.trash');
+      const priceInput = div.querySelector('input');
+      const qtyBox = div.querySelector('.qty');
+      const qtyLabel = div.querySelector('.qty b');
+
+      sel.addEventListener('change', (e) => {
+        const idx = Number(e.target.value);
+        if(idx >= 0){
+          setItem(it.id, { presetIndex: idx, desc: PRESETS[idx].name, price: PRESETS[idx].price });
+          priceInput.value = PRESETS[idx].price.toFixed(2).replace('.', ',');
+        }
+      });
+
+      trash.addEventListener('click', () => removeItem(it.id));
+
+      priceInput.addEventListener('input', () => {
+        setItem(it.id, { price: parseBRL(priceInput.value) });
+      });
+
+      qtyBox.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if(!btn) return;
+        const act = btn.dataset.act;
+        let q = it.qty || 1;
+        if(act === "minus") q = Math.max(1, q - 1);
+        if(act === "plus") q = q + 1;
+        qtyLabel.textContent = q;
+        setItem(it.id, { qty: q });
+      });
+
+      listEl.appendChild(div);
+    });
+  }
+
+  const totalLabel = document.getElementById('totalLabel');
+
+  function recalc(){
+    let total = 0;
+    for(const it of state.items){
+      const sub = (Number(it.price) || 0) * (Number(it.qty) || 0);
+      total += sub;
+    }
+    const desconto = parseBRL((document.getElementById('desconto') ? document.getElementById('desconto').value : '') || '');
+    const totalFinal = Math.max(0, total - desconto);
+    totalLabel.textContent = brl.format(totalFinal);
+  }
+
+  function formatPhoneDisplay(p){
+  // remove parênteses e espaços extras para ficar: 14 9XXXX-XXXX (ou o que o usuário digitou, sem "(" e ")")
+  return String(p || "")
+    .replace(/[()]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function fillPDF(){
+
+// Dados do instalador (config por cliente)
+const logoEl = document.getElementById('pdfLogo');
+if(logoEl && INSTALLER && INSTALLER.logo) logoEl.src = INSTALLER.logo;
+
+const nomeInst = (INSTALLER && INSTALLER.nome) ? INSTALLER.nome : "";
+const whatsInst = (INSTALLER && INSTALLER.whats) ? INSTALLER.whats : "";
+const pixInst = (INSTALLER && INSTALLER.pix) ? INSTALLER.pix : "";
+
+const waElFix = document.getElementById('pdfWhatsFix');
+if(waElFix) waElFix.textContent = whatsInst;
+
+// Atualiza Chave Pix (linha do instalador)
+const pixLine = document.querySelector('.pdf .bankLine .v');
+if(pixLine) pixLine.textContent = pixInst;
+
+// Atualiza Nome do instalador (linha do topo)
+const nomeLine = document.querySelector('.pdf .instLine .v');
+if(nomeLine) nomeLine.textContent = nomeInst;
+
+    const cliente = document.getElementById('cliente').value.trim();
+    const endereco = document.getElementById('endereco').value.trim();
+    const telefone = document.getElementById('telefone').value.trim();
+const obs = document.getElementById('obs').value.trim();
+    const pagamento = document.getElementById('pagamento').value.trim();
+    const data = document.getElementById('data').value;
+
+    document.getElementById('pdfClienteLine').innerHTML = `<span class="lblBlue">Cliente:</span> ${escapeHtml(cliente || '')}<span class="gapTel"></span><span class="lblBlue">TEL:</span> ${escapeHtml(formatPhoneDisplay(telefone || ''))}`;
+    document.getElementById('pdfEndereco').innerHTML = endereco ? `<span class="lblBlue">END:</span> ${escapeHtml(endereco)}` : '';
+    document.getElementById('pdfObs').textContent = obs || "";
+    document.getElementById('pdfPagamento').textContent = pagamento || "";
+
+    const d = data ? new Date(data+"T00:00:00") : new Date();
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yyyy = d.getFullYear();
+    document.getElementById('pdfData').textContent = `${dd}/${mm}/${yyyy}`;
+
+    const tbody = document.getElementById('pdfTbody');
+    tbody.innerHTML = "";
+
+    let total = 0;
+    state.items.forEach(it => {
+      const desc = it.desc || "Serviço";
+      const qty = Number(it.qty) || 1;
+      const sub = (Number(it.price)||0) * qty;
+      total += sub;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(desc)}</td>
+        <td>${qty}</td>
+        <td>${brl.format(sub)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    const desconto = parseBRL((document.getElementById('desconto') ? document.getElementById('desconto').value : '') || '');
+    const totalFinal = Math.max(0, total - desconto);
+
+    const validade = ((document.getElementById('validade') ? document.getElementById('validade').value : '') || '').trim();
+    const validadeTxt = validade || "7 dias";
+
+    const pdfDescontoEl = document.getElementById('pdfDesconto');
+    if(pdfDescontoEl) pdfDescontoEl.textContent = brl.format(desconto);
+
+    const pdfValEl = document.getElementById('pdfValidade');
+    if(pdfValEl) pdfValEl.textContent = validadeTxt;
+
+    document.getElementById('pdfTotal').textContent = brl.format(totalFinal);
+  }
+
+  // Gera e compartilha o PDF no padrão "Refrigerista":
+  // 1) Preenche o HTML do PDF (fillPDF)
+  // 2) Gera em memória (Blob) via html2pdf
+  // 3) Compartilha como arquivo (Web Share API)
+  // 4) Se não suportar, abre o PDF no viewer (bloburl) para compartilhar de lá
+  async function compartilharPDF(evt){
+    if(evt && evt.preventDefault) evt.preventDefault();
+    try{
+      syncParcelamentoToObs();
+      if(typeof fillPDF === "function") fillPDF();
+      window.print();
+    }catch(e){
+      console.log("[ERRO] gerar PDF (print):", e);
+      try{ alert("Não foi possível gerar o PDF."); }catch(_){}
+    }
+  }
+
+  // (PDF compartilhável removido nesta versão para não quebrar o app no iPhone)
+  
+  // ===== Parcelamento (UI + sincronização para Observações) ===============
+  function syncParcelamentoToObs(){
+    try{
+      var p = document.getElementById('parcelamento');
+      var parcelas = document.getElementById('parcelas');
+      var obs = document.getElementById('obs');
+      if(!p || !parcelas || !obs) return;
+
+      // remove mensagem antiga
+      obs.value = (obs.value || '').replace(/\n?Parcelamos em até \d+x \(consultar juros da máquina\)\.?/gi, '');
+
+      if(p.value === 'sim'){
+        var txt = "\nParcelamos em até " + parcelas.value + "x (consultar juros da máquina).";
+        obs.value = (obs.value || '') + txt;
+      }
+    }catch(e){
+      if(window.__betaShow) window.__betaShow('[ERRO] parcelamento: ' + (e.message||e));
+    }
+  }
+
+  function setupParcelamentoUI(){
+    var p = document.getElementById('parcelamento');
+    var box = document.getElementById('parcelasBox');
+    var parcelas = document.getElementById('parcelas');
+
+    if(!p || !box || !parcelas) return;
+
+    function refresh(){
+      box.style.display = (p.value === 'sim') ? 'block' : 'none';
+      syncParcelamentoToObs();
+    }
+
+    p.addEventListener('change', refresh);
+    parcelas.addEventListener('change', refresh);
+
+    // estado inicial
+    refresh();
+  }
+  // =======================================================================
+
+  // ===== Handlers (fallback para botões) ==================================
+  function onLimparClick(ev){
+    if(ev && ev.preventDefault) ev.preventDefault();
+    try{
+      if(typeof clearAll === 'function'){ clearAll(); return; }
+      // fallback simples
+      if(window.state && state.items){ state.items = []; }
+      if(typeof renderItems === 'function') renderItems();
+      var ids = ['cliente','telefone','endereco','desconto','obs','pagamento'];
+      for(var i=0;i<ids.length;i++){
+        var el = document.getElementById(ids[i]);
+        if(el) el.value = '';
+      }
+      var p = document.getElementById('parcelamento'); if(p) p.value = '';
+      var pb = document.getElementById('parcelasBox'); if(pb) pb.style.display = 'none';
+      if(typeof recalc === 'function') recalc();
+    }catch(e){
+      if(window.__betaShow) window.__betaShow('[ERRO] limpar: ' + (e.message||e));
+    }
+  }
+
+  function onGerarPdfClick(ev){
+    if(ev && ev.preventDefault) ev.preventDefault();
+    try{
+      syncParcelamentoToObs();
+      if(typeof fillPDF === 'function') fillPDF();
+      window.print();
+    }catch(e){
+      if(window.__betaShow) window.__betaShow('[ERRO] pdf: ' + (e.message||e));
+    }
+  }
+
+  async function onShareClick(ev){
+    if(ev && ev.preventDefault) ev.preventDefault();
+    try{
+      syncParcelamentoToObs();
+      if(typeof compartilharPdf === 'function'){
+        await compartilharPdf();
+      }else{
+        if(window.__betaShow) window.__betaShow('[ERRO] compartilharPdf não existe');
+      }
+    }catch(e){
+      if(window.__betaShow) window.__betaShow('[ERRO] share: ' + (e.message||e));
+    }
+  }
+  // =======================================================================
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    const btnAdd = document.getElementById('btnAdd');
+    if(btnAdd) btnAdd.addEventListener('click', addItem);
+  }catch(e){}
+
+  // Se existirem funções do parcelamento, chama com segurança
+  try{ if(typeof setupParcelamentoUI === 'function') setupParcelamentoUI(); }catch(e){}
+});
+
+</script>
+</body>
+</html>
