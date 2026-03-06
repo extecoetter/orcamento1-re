@@ -687,8 +687,6 @@
 }
 
   
-/* --- BETA 0.1.38: ocultar dados do instalador no PDF (só CSS) --- */
-.pdf .instaladorBox{ display:none !important; }
 
   
 }
@@ -711,20 +709,20 @@
   vertical-align:middle;
 }
 
-/* --- iOS PDF fine-tune (1.0.6a) --- */
+/* --- iOS PDF fine-tune (IOS 1.0) --- */
 .pdf .top{
-  padding: 0 0 8px 0 !important;
+  padding: 14px 0 8px 0 !important;
 }
 .pdf .logoRow{
-  margin-top: -30px !important;
+  margin-top: 0 !important;
 }
 .pdf .logoRow img{
-  width: 310px !important;
-  height: 170px !important;
-  margin-top: -24px !important;
+  width: 300px !important;
+  height: 165px !important;
+  margin-top: 0 !important;
 }
 .pdf .headRow{
-  margin-top: -10px !important;
+  margin-top: 8px !important;
 }
 .pdf .sum .panel .grand{
   font-size: 10px !important;
@@ -1010,9 +1008,9 @@
 
 <script>
   // === BETA CONFIG (edite aqui) ==========================================
-  window.APP_VERSION = "0.1.38";
+  window.APP_VERSION = "IOS 1.0";
   // =======================================================================
-  try{ document.title = "Orçamento Climatização - BETA " + window.APP_VERSION; }catch(e){}
+  try{ document.title = "Orçamento Climatização - " + window.APP_VERSION; }catch(e){}
 </script>
 </head>
 
@@ -1020,7 +1018,7 @@
   <div class="wrap">
     <div class="appbar">
       <h1>Proposta Comercial - Climatização</h1>
-      <p>Adicione serviços e gere o PDF. <span class="beta-inline">BETA 0.1.38</span></p>
+      <p>Adicione serviços e gere o PDF. <span class="beta-inline">IOS 1.0</span></p>
     </div>
 
     <div class="section-title">👤 DADOS DO ORÇAMENTO</div>
@@ -1194,20 +1192,51 @@
   </div>
 </div>
 
-<!-- Config por cliente (coloque um config.js dentro da pasta do cliente) -->
+<!-- Config por cliente (carregado pela URL ?cliente=...) -->
 <script>
-  // Se existir um arquivo "config.js" na mesma pasta, ele deve definir: window.CLIENT_CONFIG = { installer: {...}, logo: "logo.png" }
   window.CLIENT_CONFIG = window.CLIENT_CONFIG || null;
-</script>
-<script src="config.js"></script>
-<script>
-  // Fallback: se não existir config.js, usa este padrão
-  const INSTALLER = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) ? window.CLIENT_CONFIG.installer : {
+
+  let INSTALLER = {
     nome: "Robson Andre Extecoetter",
     whats: "(14) 99707-3447",
     pix: "14 99707 3447 / Robson A Extecoetter",
-    logo: "logo.png"
+    logo: "/climatizaorcamentos/logo.png"
   };
+
+  function carregarConfigCliente() {
+    const params = new URLSearchParams(window.location.search);
+    const cliente = params.get("cliente");
+
+    if (!cliente) {
+      console.warn("Cliente não informado na URL");
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "/climatizaorcamentos/clientes/" + cliente + "/config.js";
+
+      script.onload = () => {
+        if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) {
+          INSTALLER = {
+            nome: window.CLIENT_CONFIG.installer.nome || INSTALLER.nome,
+            whats: window.CLIENT_CONFIG.installer.whats || INSTALLER.whats,
+            pix: window.CLIENT_CONFIG.installer.pix || INSTALLER.pix,
+            logo: window.CLIENT_CONFIG.logo || window.CLIENT_CONFIG.installer.logo || INSTALLER.logo
+          };
+        }
+
+        console.log("INSTALLER carregado:", INSTALLER);
+        resolve();
+      };
+
+      script.onerror = () => {
+        reject(new Error("Não foi possível carregar /climatizaorcamentos/clientes/" + cliente + "/config.js"));
+      };
+
+      document.head.appendChild(script);
+    });
+  }
 </script>
 
 <script>
@@ -1576,7 +1605,12 @@ const obs = document.getElementById('obs').value.trim();
     }
   }
   // =======================================================================
-document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('DOMContentLoaded', async function(){
+  try{
+    await carregarConfigCliente();
+  }catch(e){
+    console.error(e);
+  }
   try{
     const btnAdd = document.getElementById('btnAdd');
     if(btnAdd) btnAdd.addEventListener('click', addItem);
@@ -1586,37 +1620,6 @@ document.addEventListener('DOMContentLoaded', function(){
   try{ if(typeof setupParcelamentoUI === 'function') setupParcelamentoUI(); }catch(e){}
 });
 
-</script>
-     
-     <script>
-async function carregarDadosInstalador() {
-  const params = new URLSearchParams(window.location.search);
-  const cliente = params.get("cliente");
-
-  if (!cliente) {
-    console.warn("Cliente não informado na URL");
-    return null;
-  }
-
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "/clientes/" + cliente + "/dados.js";
-    script.onload = () => resolve(window.DADOS_INSTALADOR || null);
-    script.onerror = () => reject(new Error("Não foi possível carregar os dados do instalador"));
-    document.head.appendChild(script);
-  });
-}
-
-let INSTALADOR = null;
-
-window.addEventListener("DOMContentLoaded", async () => {
-  try {
-    INSTALADOR = await carregarDadosInstalador();
-    console.log("Dados do instalador carregados:", INSTALADOR);
-  } catch (erro) {
-    console.error(erro);
-  }
-});
 </script>
 </body>
 </html>
