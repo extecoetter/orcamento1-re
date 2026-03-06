@@ -1,4 +1,4 @@
-const CACHE_NAME = "climatiza-v2";
+const CACHE_NAME = "climatiza-v3";
 
 const ASSETS = [
   "/",
