@@ -1187,20 +1187,51 @@
   </div>
 </div>
 
-<!-- Config por cliente (coloque um config.js dentro da pasta do cliente) -->
+<!-- Config por cliente (GitHub Pages: /climatizaorcamentos/clientes/NOME_DO_CLIENTE/config.js) -->
 <script>
-  // Se existir um arquivo "config.js" na mesma pasta, ele deve definir: window.CLIENT_CONFIG = { installer: {...}, logo: "logo.png" }
   window.CLIENT_CONFIG = window.CLIENT_CONFIG || null;
-</script>
-<script src="config.js"></script>
-<script>
-  // Fallback: se não existir config.js, usa este padrão
-  const INSTALLER = (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) ? window.CLIENT_CONFIG.installer : {
+
+  let INSTALLER = {
     nome: "Robson Andre Extecoetter",
     whats: "(14) 99707-3447",
     pix: "14 99707 3447 / Robson A Extecoetter",
-    logo: "logo.png"
+    logo: "/climatizaorcamentos/logo.png"
   };
+
+  async function carregarConfigCliente(){
+    const params = new URLSearchParams(window.location.search);
+    const cliente = params.get("cliente");
+
+    if(!cliente){
+      console.warn("Cliente não informado na URL");
+      return;
+    }
+
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "/climatizaorcamentos/clientes/" + encodeURIComponent(cliente) + "/config.js";
+
+      script.onload = () => {
+        if(window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer){
+          INSTALLER = {
+            nome: window.CLIENT_CONFIG.installer.nome || INSTALLER.nome,
+            whats: window.CLIENT_CONFIG.installer.whats || INSTALLER.whats,
+            pix: window.CLIENT_CONFIG.installer.pix || INSTALLER.pix,
+            logo: window.CLIENT_CONFIG.logo || window.CLIENT_CONFIG.installer.logo || INSTALLER.logo
+          };
+        }
+        console.log("Instalador carregado:", INSTALLER);
+        resolve();
+      };
+
+      script.onerror = () => {
+        console.error("Erro carregando config do cliente");
+        reject(new Error("Não foi possível carregar /climatizaorcamentos/clientes/" + cliente + "/config.js"));
+      };
+
+      document.head.appendChild(script);
+    });
+  }
 </script>
 
 <script>
@@ -1570,7 +1601,14 @@ const obs = document.getElementById('obs').value.trim();
     }
   }
   // =======================================================================
-document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('DOMContentLoaded', async function(){
+  try{
+    await carregarConfigCliente();
+  }catch(e){
+    console.error(e);
+    if(window.__betaShow) window.__betaShow('[ERRO] config cliente: ' + (e.message || e));
+  }
+
   try{
     const btnAdd = document.getElementById('btnAdd');
     if(btnAdd) btnAdd.addEventListener('click', addItem);
