@@ -675,8 +675,6 @@
 }
 
   
-/* --- BETA 1.0.6: ocultar dados do instalador no PDF (só CSS) --- */
-.pdf .instaladorBox{ display:none !important; }
 
   
 }
@@ -954,7 +952,7 @@
   // === BETA CONFIG (edite aqui) ==========================================
   window.APP_VERSION = "ANDROID 1.0.1";
   // =======================================================================
-  try{ document.title = "Orçamento Climatização - BETA " + window.APP_VERSION; }catch(e){}
+  try{ document.title = "Orçamento Climatização - " + window.APP_VERSION; }catch(e){}
 </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -1058,7 +1056,7 @@
   <section class="pdf" id="pdf">
 <div class="top">
   <div class="logoRow">
-    <img id="pdfLogo" src="logo.png" alt="logo" onerror="this.style.display='none'"/>
+    <img id="pdfLogo" src="/climatizaorcamentos/logo.png" alt="logo" onerror="this.style.display='none'"/>
   </div>
 
   <div class="headRow">
@@ -1637,6 +1635,7 @@ const obs = document.getElementById('obs').value.trim();
 document.addEventListener('DOMContentLoaded', async function(){
   try{
     await carregarConfigCliente();
+    if(typeof fillPDF === 'function') fillPDF();
   }catch(e){
     console.error(e);
   }
