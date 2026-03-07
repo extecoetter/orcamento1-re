@@ -4,7 +4,7 @@
 <!-- =========================================================
      ORÇAMENTO CLIMATIZAÇÃO — BETA
      Arquivo: index.html (único)
-     Versão: ANDROID 1.0.1
+     Versão: BETA 0.1.50
      Regras:
      - Mudanças devem ser "cirúrgicas"
      - Evitar mexer em layout do PDF sem necessidade
@@ -53,6 +53,18 @@
       margin: 18px auto 90px;
       padding: 0 14px;
     }
+     /* remove URL do rodapé do Safari (PDF iPhone) */
+    @media print {
+
+     html, body{
+      height:auto;
+     }
+
+     .pdf{
+       padding-bottom:40px;
+      }
+
+   }
 
     /* APP TOP BAR (SEM LOGO) */
     .appbar{
@@ -675,7 +687,7 @@
 }
 
   
-/* --- BETA 1.0.6: ocultar dados do instalador no PDF (só CSS) --- */
+/* --- BETA 0.1.38: ocultar dados do instalador no PDF (só CSS) --- */
 .pdf .instaladorBox{ display:none !important; }
 
   
@@ -698,6 +710,44 @@
   font-size:12px;
   vertical-align:middle;
 }
+
+/* --- iOS PDF fine-tune (1.0.6a) --- */
+.pdf .top{
+  padding: 0 0 8px 0 !important;
+}
+.pdf .logoRow{
+  margin-top: -30px !important;
+}
+.pdf .logoRow img{
+  width: 310px !important;
+  height: 170px !important;
+  margin-top: -24px !important;
+}
+.pdf .headRow{
+  margin-top: -10px !important;
+}
+.pdf .sum .panel .grand{
+  font-size: 10px !important;
+}
+.pdf .sum .panel .grand b{
+  font-size: 24px !important;
+}
+.pdf .bottom .box{
+  padding: 12px !important;
+}
+.pdf .bottom .box small{
+  font-size: 9px !important;
+  margin-bottom: 4px !important;
+}
+.pdf .bottom .box.obs .value{
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+.pdf .bottom .box.pay .value{
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+}
+
 </style>
 
 <script>
@@ -796,7 +846,7 @@
     // Logo (se der erro, segue sem)
     try{
       var logo = await loadLogoJpegDataUrl();
-      doc.addImage(logo, "JPEG", margin, margin-12, 260, 120, undefined, "FAST");
+      doc.addImage(logo, "JPEG", margin, margin-12, 240, 100, undefined, "FAST");
     }catch(e){}
 
     var y = margin + 86;
@@ -896,10 +946,10 @@
     doc.text(money(desconto), margin + contentW, y, { align:"right" });
 
     y += 22;
-    doc.setFontSize(12);
+    doc.setFontSize(10);
     doc.setTextColor(11,18,32);
     doc.text("TOTAL GERAL", margin + contentW - 300, y);
-    doc.setFontSize(16);
+    doc.setFontSize(14);
     doc.text(money(totalFinal), margin + contentW, y, { align:"right" });
 
     var obsEl = document.getElementById("obs");
@@ -908,20 +958,23 @@
     var pagamento = pagEl ? (pagEl.value || "").trim() : "";
 
     y += 34;
-    doc.setFontSize(10);
+    doc.setFontSize(8);
     doc.setTextColor(11,94,215);
     doc.setFont("helvetica","bold");
     doc.text("OBSERVAÇÕES", margin, y);
     doc.setFont("helvetica","normal");
+    doc.setFontSize(9);
     doc.setTextColor(51,65,85);
     var obsLines = obs ? doc.splitTextToSize(obs, contentW) : [""];
     doc.text(obsLines, margin, y+14);
 
     y += 44 + obsLines.length * 10;
     doc.setFont("helvetica","bold");
+    doc.setFontSize(7);
     doc.setTextColor(11,94,215);
     doc.text("FORMA DE PAGAMENTO", margin, y);
     doc.setFont("helvetica","normal");
+    doc.setFontSize(8);
     doc.setTextColor(51,65,85);
     var payLines = pagamento ? doc.splitTextToSize(pagamento, contentW) : [""];
     doc.text(payLines, margin, y+14);
@@ -952,19 +1005,17 @@
 
 <script>
   // === BETA CONFIG (edite aqui) ==========================================
-  window.APP_VERSION = "ANDROID 1.0.1";
+  window.APP_VERSION = "ANDROID 1.0.2";
   // =======================================================================
-  try{ document.title = "Orçamento Climatização - BETA " + window.APP_VERSION; }catch(e){}
+  try{ document.title = "Orçamento Climatização - " + window.APP_VERSION; }catch(e){}
 </script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 
 <body>
   <div class="wrap">
     <div class="appbar">
       <h1>Proposta Comercial - Climatização</h1>
-      <p>Adicione serviços e gere o PDF. <span class="beta-inline">ANDROID 1.0.1</span></p>
+      <p>Adicione serviços e gere o PDF. <span class="beta-inline">ANDROID 1.0.2</span></p>
     </div>
 
     <div class="section-title">👤 DADOS DO ORÇAMENTO</div>
@@ -1134,7 +1185,7 @@
 <div class="actions">
   <div class="inner">
     <button class="btn" id="btnLimpar" type="button" onclick="onLimparClick(event)">Limpar</button>
-    <button class="btn primary" id="btnCompartilharPDF" type="button" onclick="compartilharPDF(event)">Enviar orçamento</button>
+    <button class="btn primary" id="btnCompartilharPDF" type="button" onclick="compartilharPDF(event)">Gerar PDF</button>
   </div>
 </div>
 
@@ -1172,12 +1223,24 @@
           };
         }
 
-        console.log("INSTALLER carregado:", INSTALLER);
+        const logoEl = document.getElementById('pdfLogo');
+        if (logoEl && INSTALLER.logo) logoEl.src = INSTALLER.logo;
+
+        const waElFix = document.getElementById('pdfWhatsFix');
+        if (waElFix) waElFix.textContent = INSTALLER.whats || '';
+
+        const pixLine = document.querySelector('.pdf .bankLine .v');
+        if (pixLine) pixLine.textContent = INSTALLER.pix || '';
+
+        const nomeLine = document.querySelector('.pdf .instLine .v');
+        if (nomeLine) nomeLine.textContent = INSTALLER.nome || '';
+
+        console.log('INSTALLER carregado:', INSTALLER);
         resolve();
       };
 
       script.onerror = () => {
-        reject(new Error("Não foi possível carregar /climatizaorcamentos/clientes/" + cliente + "/config.js"));
+        reject(new Error('Não foi possível carregar /climatizaorcamentos/clientes/' + cliente + '/config.js'));
       };
 
       document.head.appendChild(script);
@@ -1228,7 +1291,7 @@
 // iPhone/Safari: crypto.randomUUID pode não existir
 function uid(){
   try{
-    if(window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    if(window.crypto && typeof crypto.randomUUID === 'function') return uid();
   }  // === BETA PATCH END: iPhone UID ====================================
 catch(e){}
   return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
@@ -1453,100 +1516,18 @@ const obs = document.getElementById('obs').value.trim();
   // 3) Compartilha como arquivo (Web Share API)
   // 4) Se não suportar, abre o PDF no viewer (bloburl) para compartilhar de lá
   async function compartilharPDF(evt){
+    if(evt && evt.preventDefault) evt.preventDefault();
     try{
-      if(evt) evt.preventDefault();
-
-      // garante que o HTML do PDF está com os dados atuais
+      syncParcelamentoToObs();
       if(typeof fillPDF === "function") fillPDF();
-
-      const pdfEl = document.getElementById("pdf");
-      if(!pdfEl) throw new Error("Elemento #pdf não encontrado");
-
-      const cliente = (document.getElementById("cliente")?.value || "cliente").trim();
-      const safeCliente = cliente.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\-]/g, "");
-      const filename = `Orcamento_${safeCliente || "cliente"}.pdf`;
-
-      // CLONE VISÍVEL FORA DA TELA (Android: evita branco e evita corte)
-      const tmp = document.createElement("div");
-      tmp.setAttribute("data-pdf-tmp","1");
-      tmp.style.cssText = "position:absolute;left:0;top:0;width:794px;background:#fff;z-index:9999;opacity:1;";
-      const clone = pdfEl.cloneNode(true);
-      clone.style.display = "block";
-      clone.style.visibility = "visible";
-      clone.style.boxSizing = "border-box";
-      clone.style.width = "770px";
-      clone.style.maxWidth = "770px";
-      clone.style.padding = "12px";
-      clone.style.margin = "0";
-      clone.style.height = "auto";
-      clone.style.minHeight = "100vh";
-      tmp.appendChild(clone);
-      document.body.appendChild(tmp);
-
-      // espera imagens do clone (logo) carregarem
-      const imgs = Array.from(clone.querySelectorAll("img"));
-      await Promise.all(imgs.map(img => img.complete ? Promise.resolve() : new Promise(res => { img.onload = img.onerror = res; })));
-
-      // aguarda um frame para garantir que o layout foi calculado
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // calcula altura real do clone renderizado
-      const cloneHeight = Math.max(clone.offsetHeight, clone.scrollHeight, clone.clientHeight);
-
-      const opt = {
-        margin: 8,
-        filename,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          allowTaint: false,
-          backgroundColor: "#ffffff",
-          width: 770,
-          height: cloneHeight,
-          scrollY: 0,
-          scrollX: 0,
-          windowWidth: 770,
-          windowHeight: cloneHeight
-        },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["css", "legacy"] }
-      };
-
-      // tenta share de arquivo (melhor UX)
-      if(navigator.share && navigator.canShare){
-        const pdfBlob = await html2pdf().set(opt).from(clone).output("blob");
-        if(!pdfBlob || !pdfBlob.size) throw new Error("PDF vazio");
-        const file = new File([pdfBlob], filename, { type: "application/pdf" });
-
-        if(navigator.canShare({ files: [file] })){
-          await navigator.share({
-            files: [file],
-            title: "Orçamento",
-            text: `Olá! Segue o orçamento em PDF para ${cliente || "o cliente"}.`
-          });
-          return;
-        }
-      }
-
-      // fallback melhor que download: abre o PDF no visualizador
-      const blobUrl = await html2pdf().set(opt).from(clone).output("bloburl");
-      window.open(blobUrl, "_blank", "noopener,noreferrer");
-      setTimeout(() => { try{ URL.revokeObjectURL(blobUrl); }catch(e){} }, 60000);
-
-    } catch(err){
-      console.log("[ERRO] compartilharPDF:", err);
-      alert("Não foi possível compartilhar o PDF automaticamente. Vou abrir a visualização para você compartilhar pelo botão do PDF.");
-      try{ window.print(); }catch(e){}
-    } finally {
-      try{
-        document.querySelectorAll('[data-pdf-tmp="1"]').forEach(n=>n.remove());
-      }catch(e){}
+      window.print();
+    }catch(e){
+      console.log("[ERRO] gerar PDF (print):", e);
+      try{ alert("Não foi possível gerar o PDF."); }catch(_){}
     }
   }
 
-
-    // (PDF compartilhável removido nesta versão para não quebrar o app no iPhone)
+  // (PDF compartilhável removido nesta versão para não quebrar o app no iPhone)
   
   // ===== Parcelamento (UI + sincronização para Observações) ===============
   function syncParcelamentoToObs(){
@@ -1650,6 +1631,37 @@ document.addEventListener('DOMContentLoaded', async function(){
   try{ if(typeof setupParcelamentoUI === 'function') setupParcelamentoUI(); }catch(e){}
 });
 
+</script>
+     
+     <script>
+async function carregarDadosInstalador() {
+  const params = new URLSearchParams(window.location.search);
+  const cliente = params.get("cliente");
+
+  if (!cliente) {
+    console.warn("Cliente não informado na URL");
+    return null;
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "/clientes/" + cliente + "/dados.js";
+    script.onload = () => resolve(window.DADOS_INSTALADOR || null);
+    script.onerror = () => reject(new Error("Não foi possível carregar os dados do instalador"));
+    document.head.appendChild(script);
+  });
+}
+
+let INSTALADOR = null;
+
+window.addEventListener("DOMContentLoaded", async () => {
+  try {
+    INSTALADOR = await carregarDadosInstalador();
+    console.log("Dados do instalador carregados:", INSTALADOR);
+  } catch (erro) {
+    console.error(erro);
+  }
+});
 </script>
 </body>
 </html>
