@@ -1,4 +1,4 @@
-const CACHE_NAME = "climatiza-android-1-0-1";
+const CACHE_NAME = "climatiza-android-1-0-2";
 
 const ASSETS = [
   "/climatizaorcamentos/android/index.html",
