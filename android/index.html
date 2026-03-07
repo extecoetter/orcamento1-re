@@ -4,7 +4,7 @@
 <!-- =========================================================
      ORÇAMENTO CLIMATIZAÇÃO — BETA
      Arquivo: index.html (único)
-     Versão: ANDROID 1.0.2
+     Versão: ANDROID 1.0.1
      Regras:
      - Mudanças devem ser "cirúrgicas"
      - Evitar mexer em layout do PDF sem necessidade
@@ -18,13 +18,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Proposta Comercial - Climatização</title>
 
-  <link rel="manifest" href="/climatizaorcamentos/android/manifest.json">
-  <meta name="theme-color" content="#000000">
-  <meta name="application-name" content="Orçamento Climatização">
-  <meta name="mobile-web-app-capable" content="yes">
-  <link rel="icon" href="/climatizaorcamentos/icons/icon-192.png" type="image/png">
-  <link rel="apple-touch-icon" href="/climatizaorcamentos/icons/icon-180.png">
-     
+  
+<!-- PWA (BETA 0.1.x) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f6feb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Orçamento Climatização">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<!-- /PWA -->
 <style>
     :root{
       --bg:#f3f6fb;
@@ -748,39 +751,29 @@
     return __jspdfLoading2;
   }
 
-function loadLogoJpegDataUrl(){
-  return new Promise(function(resolve, reject){
-    var img = new Image();
-    img.crossOrigin = "anonymous";
-
-    img.onload = function(){
-      try{
-        var w = img.naturalWidth || img.width;
-        var h = img.naturalHeight || img.height;
-        var c = document.createElement("canvas");
-        c.width = w;
-        c.height = h;
-        var ctx = c.getContext("2d");
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, w, h);
-        ctx.drawImage(img, 0, 0);
-        resolve(c.toDataURL("image/jpeg", 0.92));
-      }catch(e){
-        reject(new Error("Falha ao converter logo."));
-      }
-    };
-
-    img.onerror = function(){
-      reject(new Error("Logo não carregou."));
-    };
-
-    var logoSrc = (typeof INSTALLER !== "undefined" && INSTALLER && INSTALLER.logo)
-      ? INSTALLER.logo
-      : ((window.CLIENT_CONFIG && window.CLIENT_CONFIG.logo) ? window.CLIENT_CONFIG.logo : "/climatizaorcamentos/logo.png");
-
-    img.src = logoSrc + (logoSrc.indexOf("?") >= 0 ? "&" : "?") + "v=" + encodeURIComponent(window.APP_VERSION || "");
-  });
-}
+  function loadLogoJpegDataUrl(){
+    return new Promise(function(resolve, reject){
+      var img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = function(){
+        try{
+          var w = img.naturalWidth || img.width;
+          var h = img.naturalHeight || img.height;
+          var c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          var ctx = c.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0,0,w,h);
+          ctx.drawImage(img,0,0);
+          resolve(c.toDataURL("image/jpeg", 0.92));
+        }catch(e){
+          reject(new Error("Falha ao converter logo."));
+        }
+      };
+      img.onerror = function(){ reject(new Error("Logo não carregou (logo.png).")); };
+      img.src = "logo.png?v=" + encodeURIComponent(window.APP_VERSION || "");
+    });
+  }
 
   function money(v){
     return brl.format(Number(v) || 0);
@@ -957,7 +950,7 @@ function loadLogoJpegDataUrl(){
 
 <script>
   // === BETA CONFIG (edite aqui) ==========================================
-  window.APP_VERSION = "ANDROID 1.0.2";
+  window.APP_VERSION = "ANDROID 1.0.1";
   // =======================================================================
   try{ document.title = "Orçamento Climatização - " + window.APP_VERSION; }catch(e){}
 </script>
@@ -969,7 +962,7 @@ function loadLogoJpegDataUrl(){
   <div class="wrap">
     <div class="appbar">
       <h1>Proposta Comercial - Climatização</h1>
-      <p>Adicione serviços e gere o PDF. <span class="beta-inline">ANDROID 1.0.2</span></p>
+      <p>Adicione serviços e gere o PDF. <span class="beta-inline">ANDROID 1.0.1</span></p>
     </div>
 
     <div class="section-title">👤 DADOS DO ORÇAMENTO</div>
@@ -1063,7 +1056,7 @@ function loadLogoJpegDataUrl(){
   <section class="pdf" id="pdf">
 <div class="top">
   <div class="logoRow">
-    <img id="pdfLogo" src="" alt="logo" style="display:none"/>
+    <img id="pdfLogo" src="/climatizaorcamentos/logo.png" alt="logo" onerror="this.style.display='none'"/>
   </div>
 
   <div class="headRow">
@@ -1154,18 +1147,18 @@ function loadLogoJpegDataUrl(){
     logo: "/climatizaorcamentos/logo.png"
   };
 
-function carregarConfigCliente() {
-  const params = new URLSearchParams(window.location.search);
-  const cliente = params.get("cliente");
+  function carregarConfigCliente() {
+    const params = new URLSearchParams(window.location.search);
+    const cliente = params.get("cliente");
 
-  if (!cliente) {
-    console.warn("Cliente não informado na URL");
-    return Promise.resolve();
-  }
+    if (!cliente) {
+      console.warn("Cliente não informado na URL");
+      return Promise.resolve();
+    }
 
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "/climatizaorcamentos/clientes/" + cliente + "/config.js";
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "/climatizaorcamentos/clientes/" + cliente + "/config.js";
 
       script.onload = () => {
         if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) {
@@ -1383,14 +1376,8 @@ function escapeHtml(s){
 
 // Dados do instalador (config por cliente)
 const logoEl = document.getElementById('pdfLogo');
-if(logoEl){
-  const logoSrc = (INSTALLER && INSTALLER.logo)
-    ? INSTALLER.logo
-    : ((window.CLIENT_CONFIG && window.CLIENT_CONFIG.logo) ? window.CLIENT_CONFIG.logo : "/climatizaorcamentos/logo.png");
-
-  logoEl.style.display = "block";
-  logoEl.removeAttribute("onerror");
-  logoEl.src = logoSrc + (logoSrc.indexOf("?") >= 0 ? "&" : "?") + "v=" + (window.APP_VERSION || "");
+if(logoEl && INSTALLER && INSTALLER.logo){
+  logoEl.src = INSTALLER.logo + "?v=" + (window.APP_VERSION || "");
 }
 
 const nomeInst = (INSTALLER && INSTALLER.nome) ? INSTALLER.nome : "";
