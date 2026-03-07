@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Climatiza Orçamentos</title>
+  <style>
+    body{
+      font-family: Arial, Helvetica, sans-serif;
+      background:#0b5ed7;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100vh;
+      margin:0;
+    }
+    .box{ text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Climatiza Orçamentos</h2>
+    <p>Abrindo versão iOS...</p>
+  </div>
+
+  <script>
+    const cliente = "joaodealmeida";
+    const BASE = "/climatizaorcamentos";
+    window.location.href = BASE + "/ios/index.html?cliente=" + encodeURIComponent(cliente);
+  </script>
+</body>
+</html>
