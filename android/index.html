@@ -1155,40 +1155,46 @@ function loadLogoJpegDataUrl(){
   };
 
   function carregarConfigCliente() {
-    const params = new URLSearchParams(window.location.search);
-    const cliente = params.get("cliente");
+  const params = new URLSearchParams(window.location.search);
+  let cliente = params.get("cliente");
 
-    if (!cliente) {
-      console.warn("Cliente não informado na URL");
-      return Promise.resolve();
-    }
-
-    return new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "/climatizaorcamentos/clientes/" + cliente + "/config.js";
-
-      script.onload = () => {
-        if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) {
-          INSTALLER = {
-            nome: window.CLIENT_CONFIG.installer.nome || INSTALLER.nome,
-            whats: window.CLIENT_CONFIG.installer.whats || INSTALLER.whats,
-            pix: window.CLIENT_CONFIG.installer.pix || INSTALLER.pix,
-            logo: window.CLIENT_CONFIG.logo || window.CLIENT_CONFIG.installer.logo || INSTALLER.logo
-          };
-        }
-
-        window.INSTALLER = INSTALLER;
-        console.log("INSTALLER carregado:", INSTALLER);
-        resolve();
-      };
-
-      script.onerror = () => {
-        reject(new Error("Não foi possível carregar /climatizaorcamentos/clientes/" + cliente + "/config.js"));
-      };
-
-      document.head.appendChild(script);
-    });
+  if (cliente) {
+    localStorage.setItem("cliente_atual", cliente);
+  } else {
+    cliente = localStorage.getItem("cliente_atual");
   }
+
+  if (!cliente) {
+    console.warn("Cliente não informado na URL e não encontrado no armazenamento.");
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "/climatizaorcamentos/clientes/" + cliente + "/config.js";
+
+    script.onload = () => {
+      if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) {
+        INSTALLER = {
+          nome: window.CLIENT_CONFIG.installer.nome || "",
+          whats: window.CLIENT_CONFIG.installer.whats || "",
+          pix: window.CLIENT_CONFIG.installer.pix || "",
+          logo: window.CLIENT_CONFIG.logo || window.CLIENT_CONFIG.installer.logo || ""
+        };
+      }
+
+      window.INSTALLER = INSTALLER;
+      console.log("INSTALLER carregado:", INSTALLER);
+      resolve();
+    };
+
+    script.onerror = () => {
+      reject(new Error("Erro ao carregar config do cliente"));
+    };
+
+    document.head.appendChild(script);
+  });
+}
 </script>
 
 <script>
