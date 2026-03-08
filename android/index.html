@@ -1389,8 +1389,20 @@ function escapeHtml(s){
 
 // Dados do instalador (config por cliente)
 const logoEl = document.getElementById('pdfLogo');
+
 if(logoEl && INSTALLER && INSTALLER.logo){
-  logoEl.src = INSTALLER.logo + "?v=" + (window.APP_VERSION || "");
+  let logoPath = INSTALLER.logo;
+
+  // se o caminho não for absoluto, monta a rota do cliente automaticamente
+  if(!logoPath.startsWith("/")){
+    const params = new URLSearchParams(window.location.search);
+    const cliente = params.get("cliente");
+    if(cliente){
+      logoPath = "/climatizaorcamentos/clientes/" + cliente + "/" + logoPath;
+    }
+  }
+
+  logoEl.src = logoPath + "?v=" + (window.APP_VERSION || "");
 }
 
 const nomeInst = (INSTALLER && INSTALLER.nome) ? INSTALLER.nome : "";
