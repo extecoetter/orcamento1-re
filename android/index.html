@@ -750,29 +750,42 @@
     return __jspdfLoading2;
   }
 
-  function loadLogoJpegDataUrl(){
-    return new Promise(function(resolve, reject){
-      var img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = function(){
-        try{
-          var w = img.naturalWidth || img.width;
-          var h = img.naturalHeight || img.height;
-          var c = document.createElement("canvas");
-          c.width = w; c.height = h;
-          var ctx = c.getContext("2d");
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0,0,w,h);
-          ctx.drawImage(img,0,0);
-          resolve(c.toDataURL("image/jpeg", 0.92));
-        }catch(e){
-          reject(new Error("Falha ao converter logo."));
-        }
-      };
-      img.onerror = function(){ reject(new Error("Logo não carregou (logo.png).")); };
-      img.src = "logo.png?v=" + encodeURIComponent(window.APP_VERSION || "");
-    });
-  }
+function loadLogoJpegDataUrl(){
+  return new Promise(function(resolve, reject){
+    var img = new Image();
+    img.crossOrigin = "anonymous";
+
+    img.onload = function(){
+      try{
+        var w = img.naturalWidth || img.width;
+        var h = img.naturalHeight || img.height;
+
+        var c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img,0,0);
+
+        resolve(c.toDataURL("image/jpeg",0.92));
+      }catch(e){
+        reject(new Error("Falha ao converter logo"));
+      }
+    };
+
+    img.onerror = function(){
+      reject(new Error("Logo não carregou"));
+    };
+
+    var logoSrc = (INSTALLER && INSTALLER.logo)
+      ? INSTALLER.logo
+      : "/climatizaorcamentos/logo.png";
+
+    img.src = logoSrc + "?v=" + encodeURIComponent(window.APP_VERSION || "");
+  });
+}
 
   function money(v){
     return brl.format(Number(v) || 0);
@@ -1160,14 +1173,20 @@
       script.src = "/climatizaorcamentos/clientes/" + cliente + "/config.js";
 
       script.onload = () => {
-        if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) {
-          INSTALLER = {
-            nome: window.CLIENT_CONFIG.installer.nome || INSTALLER.nome,
-            whats: window.CLIENT_CONFIG.installer.whats || INSTALLER.whats,
-            pix: window.CLIENT_CONFIG.installer.pix || INSTALLER.pix,
-            logo: window.CLIENT_CONFIG.logo || window.CLIENT_CONFIG.installer.logo || INSTALLER.logo
-          };
-        }
+  if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) {
+    INSTALLER = {
+      nome: window.CLIENT_CONFIG.installer.nome || INSTALLER.nome,
+      whats: window.CLIENT_CONFIG.installer.whats || INSTALLER.whats,
+      pix: window.CLIENT_CONFIG.installer.pix || INSTALLER.pix,
+      logo: window.CLIENT_CONFIG.logo || window.CLIENT_CONFIG.installer.logo || INSTALLER.logo
+    };
+  }
+
+  window.INSTALLER = INSTALLER;
+
+  console.log("INSTALLER carregado:", INSTALLER);
+  resolve();
+};
 
         console.log("INSTALLER carregado:", INSTALLER);
         resolve();
