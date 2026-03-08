@@ -780,8 +780,8 @@
       };
 
       var logoSrc = (INSTALLER && INSTALLER.logo)
-        ? INSTALLER.logo
-        : "/climatizaorcamentos/logo.png";
+  ? INSTALLER.logo
+  : "/climatizaorcamentos/logo.png";
 
       img.src = logoSrc + "?v=" + encodeURIComponent(window.APP_VERSION || "");
     });
@@ -1150,50 +1150,56 @@
 
 <!-- Config por cliente (carregado pela URL ?cliente=...) -->
 <script>
-  window.CLIENT_CONFIG = window.CLIENT_CONFIG || null;
+  <script>
+window.CLIENT_CONFIG = window.CLIENT_CONFIG || null;
 
-  let INSTALLER = {
-    nome: "Robson Andre Extecoetter",
-    whats: "(14) 99707-3447",
-    pix: "14 99707 3447 / Robson A Extecoetter",
-    logo: "/climatizaorcamentos/logo.png"
-  };
+let INSTALLER = {
+  nome: "",
+  whats: "",
+  pix: "",
+  logo: ""
+};
 
-  function carregarConfigCliente() {
-    const params = new URLSearchParams(window.location.search);
-    const cliente = params.get("cliente");
+function carregarConfigCliente() {
+  const params = new URLSearchParams(window.location.search);
+  const cliente = params.get("cliente");
 
-    if (!cliente) {
-      console.warn("Cliente não informado na URL");
-      return Promise.resolve();
-    }
-
-    return new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "/climatizaorcamentos/clientes/" + cliente + "/config.js";
-
-      script.onload = () => {
-        if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) {
-          INSTALLER = {
-            nome: window.CLIENT_CONFIG.installer.nome || INSTALLER.nome,
-            whats: window.CLIENT_CONFIG.installer.whats || INSTALLER.whats,
-            pix: window.CLIENT_CONFIG.installer.pix || INSTALLER.pix,
-            logo: window.CLIENT_CONFIG.logo || window.CLIENT_CONFIG.installer.logo || INSTALLER.logo
-          };
-        }
-
-        window.INSTALLER = INSTALLER;
-        console.log("INSTALLER carregado:", INSTALLER);
-        resolve();
-      };
-
-      script.onerror = () => {
-        reject(new Error("Não foi possível carregar /climatizaorcamentos/clientes/" + cliente + "/config.js"));
-      };
-
-      document.head.appendChild(script);
-    });
+  if (!cliente) {
+    console.warn("Cliente não informado na URL");
+    return Promise.resolve();
   }
+
+  return new Promise((resolve, reject) => {
+
+    const script = document.createElement("script");
+    script.src = "/climatizaorcamentos/clientes/" + cliente + "/config.js";
+
+    script.onload = () => {
+
+      if (window.CLIENT_CONFIG && window.CLIENT_CONFIG.installer) {
+        INSTALLER = {
+          nome: window.CLIENT_CONFIG.installer.nome || "",
+          whats: window.CLIENT_CONFIG.installer.whats || "",
+          pix: window.CLIENT_CONFIG.installer.pix || "",
+          logo: window.CLIENT_CONFIG.logo || window.CLIENT_CONFIG.installer.logo || ""
+        };
+      }
+
+      window.INSTALLER = INSTALLER;
+
+      console.log("INSTALLER carregado:", INSTALLER);
+
+      resolve();
+    };
+
+    script.onerror = () => {
+      reject(new Error("Erro ao carregar config do cliente"));
+    };
+
+    document.head.appendChild(script);
+
+  });
+}
 </script>
 
 <script>
