@@ -4,7 +4,7 @@
 <!-- =========================================================
      ORÇAMENTO CLIMATIZAÇÃO — BETA
      Arquivo: index.html (único)
-     Versão: ANDROID 1.0.1
+     Versão: ANDROID 1.1
      Regras:
      - Mudanças devem ser "cirúrgicas"
      - Evitar mexer em layout do PDF sem necessidade
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Proposta Comercial - Climatização</title>
 
-  <link rel="manifest" href="/climatizaorcamentos/android/manifest.json">
+  <link rel="manifest" href="/climatizaorcamentos/manifest.json">
   <meta name="theme-color" content="#000000">
   <meta name="application-name" content="Orçamento Climatização">
   <meta name="mobile-web-app-capable" content="yes">
@@ -774,8 +774,8 @@ function loadLogoJpegDataUrl(){
       reject(new Error("Logo não carregou."));
     };
 
-    var logoSrc = (window.INSTALLER && window.INSTALLER.logo)
-      ? window.INSTALLER.logo
+    var logoSrc = (INSTALLER && INSTALLER.logo)
+      ? INSTALLER.logo
       : "/climatizaorcamentos/logo.png";
 
     img.src = logoSrc + (logoSrc.indexOf("?") >= 0 ? "&" : "?") + "v=" + encodeURIComponent(window.APP_VERSION || "");
@@ -957,7 +957,7 @@ function loadLogoJpegDataUrl(){
 
 <script>
   // === BETA CONFIG (edite aqui) ==========================================
-  window.APP_VERSION = "ANDROID 1.0.1";
+  window.APP_VERSION = "ANDROID 1.1";
   // =======================================================================
   try{ document.title = "Orçamento Climatização - " + window.APP_VERSION; }catch(e){}
 </script>
@@ -969,7 +969,7 @@ function loadLogoJpegDataUrl(){
   <div class="wrap">
     <div class="appbar">
       <h1>Proposta Comercial - Climatização</h1>
-      <p>Adicione serviços e gere o PDF. <span class="beta-inline">ANDROID 1.0.1</span></p>
+      <p>Adicione serviços e gere o PDF. <span class="beta-inline">ANDROID 1.1</span></p>
     </div>
 
     <div class="section-title">👤 DADOS DO ORÇAMENTO</div>
@@ -1177,6 +1177,7 @@ function loadLogoJpegDataUrl(){
           };
         }
 
+        window.INSTALLER = INSTALLER;
         console.log("INSTALLER carregado:", INSTALLER);
         resolve();
       };
@@ -1662,15 +1663,6 @@ document.addEventListener('DOMContentLoaded', async function(){
   try{ if(typeof setupParcelamentoUI === 'function') setupParcelamentoUI(); }catch(e){}
 });
 
-</script>
-     <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/climatizaorcamentos/android/service-worker.js")
-        .then((reg) => console.log("SW Android registrado:", reg.scope))
-        .catch((err) => console.error("Erro ao registrar SW Android:", err));
-    });
-  }
 </script>
 </body>
 </html>
