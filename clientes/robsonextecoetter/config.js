@@ -1,8 +1,8 @@
 window.CLIENT_CONFIG = {
   installer: {
-    nome: "Robson Andre Extecoetter",
-    whats: "(14) 99707-3447",
-    pix: "14 99707 3447 / Robson A Extecoetter"
+    nome: "AC Arte Doce",
+    whats: "(11) 97239-1992",
+    pix: "11 97239 1992 / Catarina Barbara"
   },
   logo: "/climatizaorcamentos/clientes/robsonextecoetter/logo.png"
 };
