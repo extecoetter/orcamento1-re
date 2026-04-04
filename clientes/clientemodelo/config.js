@@ -1,8 +1,8 @@
 window.CLIENT_CONFIG = {
   installer: {
-    nome: "Cliente Modelo Modelo",
-    whats: "(14) 99707-3447",
-    pix: "14 99707 3447 / Cliente Modelo"
+    nome: "AC Arte Doce",
+    whats: "(11) 997239-1992",
+    pix: "11 997239 1992 / Catarina Barbara"
   },
 
   logo: "/climatizaorcamentos/clientes/clientemodelo/logo.png"
